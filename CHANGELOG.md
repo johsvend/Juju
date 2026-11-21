@@ -1,7 +1,7 @@
 # Endringslogg
 
 ## 1.3.2
-- **Søkevinduet:** tett, mørk bakgrunn og søkefelt med forstørrelsesglass. Forklaringslinjen, delingsstatusen og kanal-knappen er fjernet. Kanalen styres med `/juju kanal`, og status vises med `/juju sync`.
+- **Søkevinduet:** tett, mørk bakgrunn og søkefelt med forstørrelsesglass. Forklaringslinjen og delingsstatusen er fjernet, mens knappen «Bli med i / Forlat Juju-kanalen» står nederst til høyre. Status vises med `/juju sync`.
 
 ## 1.3.1
 - **Drop-listen følger musa:** den vises når musa er over en mob og forsvinner når musa flyttes vekk, i stedet for å vises ved klikk. Den blir stående litt, og så lenge musa er over listen, slik at den kan dras.

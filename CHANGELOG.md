@@ -1,5 +1,9 @@
 # Endringslogg
 
+## 1.4.5
+- **Oppdaterte fellesdata:** de nyeste drop-tallene fra Juju-spillere er bygget inn, signert som før.
+- Rettet en feil som stoppet oppdateringen av fellesdataene på GitHub.
+
 ## 1.4.4
 - **Rettet: skinning ble ikke telt på Forever.** Spillet oppgir ikke hvilken mob skinning-loot kommer fra, og et lik du høyreklikker blir ikke target. Juju noterer nå liket når skinningen starter: liket under musa, ellers target, ellers mob-navnet skinningen var rettet mot.
 

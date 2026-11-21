@@ -165,6 +165,11 @@ class SignTests(unittest.TestCase):
         other = self.sign.keygen()
         self.assertFalse(self.sign.verify(text, sig, other["n"]))
 
+    def test_key_with_bom_from_secret(self):
+        import json
+        text = "﻿" + json.dumps(self.key) + "\r\n"     # as pasted from a Windows file
+        self.assertEqual(merge_submissions.load_key(text), self.key)
+
     def test_canonical_matches_file_lines(self):
         subs = {"abcd": {"serial": 7, "mobs": {38: {"kills": 10, "items": {2589: 3}}}}}
         kills, items, players = merge_submissions.merge(subs)

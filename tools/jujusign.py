@@ -97,7 +97,7 @@ if __name__ == "__main__":
             json.dump(keygen(), f)
         print("nøkkel laget:", sys.argv[2])
     elif len(sys.argv) == 3 and sys.argv[1] == "pubkey":
-        with open(sys.argv[2], encoding="utf-8") as f:
+        with open(sys.argv[2], encoding="utf-8-sig") as f:
             print(json.load(f)["n"])
     else:
         print(__doc__)

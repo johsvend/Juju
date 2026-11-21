@@ -446,6 +446,7 @@ local function defaults(db)
     db.peers = type(db.peers) == "table" and db.peers or {}
     db.peerLimit = type(db.peerLimit) == "table" and db.peerLimit or {}
     db.sync = type(db.sync) == "table" and db.sync or {}
+    if db.sync.channel == nil then db.sync.channel = true end   -- Juju channel: ON by default
 end
 
 -- Automatic sharing: on every logout and /reload (the only times WoW writes
@@ -489,6 +490,12 @@ boot:RegisterEvent("ADDON_ACTION_FORBIDDEN")
 local queued = false
 boot:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "ADDON_ACTION_BLOCKED" or event == "ADDON_ACTION_FORBIDDEN" then
+        if arg1 == ADDON and J.Sync and J.Sync.autoJoining and J.db then
+            -- joining the channel by ourselves isn't allowed here: never again automatically
+            J.db.sync.autoJoinBlocked = true
+            J.Print("spillet tillater ikke at Juju blir med i Juju-kanalen automatisk. Klikk OFF i Juju-søket for å slå den på.")
+            return
+        end
         if arg1 == ADDON then
             J.Print(("|cffff4040diagnose:|r %s – funksjon: |cffffff00%s|r (i kamp: %s, target: %s, loot åpen: %s)"):format(
                 event, tostring(arg2), tostring(InCombatLockdown() and true or false),

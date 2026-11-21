@@ -265,7 +265,7 @@ function S:JoinChannel()
 end
 
 function S:LeaveChannel()
-    J.db.sync.channel = nil
+    J.db.sync.channel = false            -- the player said OFF: stays off after login too
     hideChannel()
     if channelId() and type(LeaveChannelByName) == "function" then pcall(LeaveChannelByName, S.CHANNEL) end
 end
@@ -314,5 +314,16 @@ function S:Init()
         end
     end)
     -- the game rejoins a permanent channel at login: keep it out of the chat windows
-    if J.db.sync.channel then C_Timer.After(5, function() if channelId() then hideChannel() end end) end
+    -- Default ON: join by ourselves a little after login, unless the player
+    -- switched it OFF. If the game ever blocks that (Core.lua sees the
+    -- ADDON_ACTION_BLOCKED for us while S.autoJoining), it is never tried
+    -- automatically again: the button (a click) still works.
+    C_Timer.After(10, function()
+        if not (J.db.autoShare and J.db.sync.channel) then return end
+        if channelId() then hideChannel(); return end           -- the game rejoined it for us
+        if J.db.sync.autoJoinBlocked then return end
+        S.autoJoining = true
+        S:JoinChannel()
+        C_Timer.After(3, function() S.autoJoining = nil end)
+    end)
 end

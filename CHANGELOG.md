@@ -1,5 +1,9 @@
 # Endringslogg
 
+## 1.3.3
+- **Kanal-knappen viser ON/OFF** (grønn/rød) ved tittelen «Juju Monster Drop Search».
+- **Juju-kanalen er ON fra start:** Juju blir med 10 sekunder etter innlogging. Velger du OFF, blir det stående OFF. Hvis spillet ikke tillater automatisk innmelding, prøver Juju aldri igjen av seg selv, og et klikk på OFF slår den på.
+
 ## 1.3.2
 - **Søkevinduet:** tett, mørk bakgrunn og søkefelt med forstørrelsesglass. Forklaringslinjen og delingsstatusen er fjernet, mens knappen «Bli med i / Forlat Juju-kanalen» står nederst til høyre. Status vises med `/juju sync`.
 

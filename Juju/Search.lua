@@ -193,9 +193,9 @@ local function create()
         end
     end
 
-    local title = text(frame, "GameFontNormalLarge", "CENTER")
-    title:SetPoint("TOP", 0, -14)
-    title:SetText("Juju – hvor farmer jeg dette?")
+    local title = text(frame, "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", 20, -16)
+    title:SetText("Juju Monster Drop Search")
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", -4, -4)
 
@@ -245,16 +245,15 @@ local function create()
 
     scroll = CreateFrame("ScrollFrame", "JujuSearchScroll", frame, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", 14, -100)
-    scroll:SetPoint("BOTTOMRIGHT", -32, 44)
+    scroll:SetPoint("BOTTOMRIGHT", -32, 16)
     child = CreateFrame("Frame", nil, scroll)
     child:SetSize(W - 56, 10)
     scroll:SetScrollChild(child)
 
-    -- Juju channel button, bottom right (no legend or status text; status: /juju sync)
-    line(40, true)
+    -- Juju channel button, right of the title (no legend or status text; status: /juju sync)
     S.chan = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    S.chan:SetSize(170, 22)
-    S.chan:SetPoint("BOTTOMRIGHT", -16, 12)
+    S.chan:SetSize(160, 20)
+    S.chan:SetPoint("LEFT", title, "RIGHT", 12, 0)
     S.chan:SetScript("OnClick", function()
         if J.Sync:InChannel() then J.Sync:LeaveChannel() else J.Sync:JoinChannel() end
         C_Timer.After(2.5, function() S:Update() end)

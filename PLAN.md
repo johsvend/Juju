@@ -17,7 +17,7 @@
 | 4 Innsending (GitHub-skjema, robot, Discord-veiledning) og sammenslåing | ✅ Ligger på GitHub (johsvend/Juju), og jobbene kjører. |
 | Fellesdata deles i spillet (signert av GitHub) | ✅ v1.4. Ikke testet i ekte spill ennå. |
 | 5 README, endringslogg | ✅ |
-| 5 CurseForge/Wago | ⏸ Utsatt etter ønske. |
+| 5 CurseForge | ✅ Workflowen «Slipp til CurseForge» er klar. ⏳ Prosjektet på CurseForge og nøkkelen må settes opp (se `CONTRIBUTING.md`). Wago er fortsatt utsatt. |
 
 ---
 

@@ -1,0 +1,84 @@
+# Publishes Juju to CurseForge when a version tag is pushed (e.g. v1.4.4).
+#
+# Needs (GitHub: Settings -> Secrets and variables -> Actions):
+#   secret   CF_API_KEY      CurseForge API token (curseforge.com -> profile -> API tokens)
+#   variable CF_PROJECT_ID   the "Project ID" number on the CurseForge project page
+#   variable CF_GAME_VERSION (optional) CurseForge game-version id; when missing it is
+#            looked up from "## Interface:" in Juju.toc (16001 -> "1.60.1")
+#
+# Only the Juju/ folder is uploaded (uploader, tools and data stay out).
+name: Slipp til CurseForge
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sjekk Lua-syntaks
+        run: |
+          sudo apt-get install -y -qq lua5.1 > /dev/null
+          for f in Juju/*.lua; do luac5.1 -p "$f" || exit 1; done
+
+      - name: Les versjon og endringslogg
+        run: |
+          version=$(grep -m1 '^## Version:' Juju/Juju.toc | sed 's/## Version: *//' | tr -d '\r')
+          iface=$(grep -m1 '^## Interface:' Juju/Juju.toc | sed 's/## Interface: *//' | tr -d '\r')
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Juju.toc har versjon $version, men taggen er $GITHUB_REF_NAME"; exit 1
+          fi
+          # 16001 -> 1.60.1
+          gamever="$((10#${iface:0:1})).$((10#${iface:1:2})).$((10#${iface:3:2}))"
+          # this version's section of CHANGELOG.md
+          awk -v v="## $version" '$0==v{on=1;next} /^## /{on=0} on' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "Juju $version" > notes.md
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "GAMEVER=$gamever" >> "$GITHUB_ENV"
+          echo "Versjon $version for spillversjon $gamever"; cat notes.md
+
+      - name: Lag Juju.zip
+        run: |
+          mkdir -p dist
+          cp -r Juju dist/Juju
+          cp LICENSE README.md dist/Juju/
+          (cd dist && zip -r -q ../Juju.zip Juju)
+          unzip -l Juju.zip
+
+      - name: Last opp til CurseForge
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          CF_PROJECT_ID: ${{ vars.CF_PROJECT_ID }}
+          CF_GAME_VERSION: ${{ vars.CF_GAME_VERSION }}
+        run: |
+          set -euo pipefail
+          [ -n "$CF_API_KEY" ] || { echo "Mangler secret CF_API_KEY"; exit 1; }
+          [ -n "$CF_PROJECT_ID" ] || { echo "Mangler variabel CF_PROJECT_ID"; exit 1; }
+          api=https://wow.curseforge.com/api
+          gid="$CF_GAME_VERSION"
+          if [ -z "$gid" ]; then
+            curl -fsS -H "X-Api-Token: $CF_API_KEY" "$api/game/versions" > versions.json
+            gid=$(jq -r --arg n "$GAMEVER" '[.[] | select(.name == $n)] | max_by(.id) | .id // empty' versions.json)
+            if [ -z "$gid" ]; then
+              echo "Fant ingen CurseForge-spillversjon som heter $GAMEVER. Kandidater:"
+              jq -r '.[] | select(.name | test("^1\\.(5|6)")) | "\(.id)  \(.name)  (type \(.gameVersionTypeID))"' versions.json
+              echo "Sett variabelen CF_GAME_VERSION til riktig id og kjør igjen."
+              exit 1
+            fi
+          fi
+          echo "Spillversjon-id: $gid"
+          jq -n --rawfile log notes.md --arg name "Juju $VERSION" --argjson gid "$gid" \
+            '{changelog: $log, changelogType: "markdown", displayName: $name,
+              gameVersions: [$gid], releaseType: "release"}' > metadata.json
+          curl -fsS -H "X-Api-Token: $CF_API_KEY" \
+            -F "metadata=<metadata.json;type=application/json" \
+            -F "file=@Juju.zip;type=application/zip" \
+            "$api/projects/$CF_PROJECT_ID/upload-file"
+          echo; echo "Juju $VERSION er lastet opp til CurseForge"

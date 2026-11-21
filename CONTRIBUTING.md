@@ -83,7 +83,39 @@ pip install -r tools/requirements.txt
 python tools/extract_drops.py            # bruker QuestieDB fra standard WoW Forever-installasjon
 ```
 
+## Slippe en ny versjon på CurseForge
+
+Workflowen «Slipp til CurseForge» (`.github/workflows/release.yml`) laster opp `Juju.zip` når en versjons-tag pushes. Zip-fila inneholder bare `Juju/`-mappa. Endringsteksten hentes fra avsnittet for versjonen i `CHANGELOG.md`.
+
+### Engangsoppsett
+
+1. Logg inn på [curseforge.com](https://www.curseforge.com), velg **Create a Project** og deretter **World of Warcraft → Addons**. Navn: `Juju`. Lisens: **GPL-3.0**. Beskrivelsen kan hentes fra teksten under. Prosjektet må godkjennes av CurseForge, noe som kan ta litt tid.
+2. Noter **Project ID**, tallet til høyre på prosjektsiden.
+3. Gå til profilen din, velg **API tokens** og lag en nøkkel, for eksempel med navnet `Juju GitHub`.
+4. Gå til GitHub-repoet, velg **Settings → Secrets and variables → Actions**:
+   - Under **Secrets**, legg til `CF_API_KEY` med nøkkelen fra punkt 3. Navnet er `CF_API_KEY`; selve nøkkelen er verdien.
+   - Under **Variables**, legg til `CF_PROJECT_ID` med tallet fra punkt 2.
+
+### Hver ny versjon
+
+1. Oppdater `## Version:` i `Juju/Juju.toc` og lag et avsnitt `## x.y.z` i `CHANGELOG.md`.
+2. Lag taggen og push den: `git tag v1.4.4` og deretter `git push origin v1.4.4`.
+
+Workflowen stopper hvis taggen ikke stemmer med versjonen i `Juju.toc`. Spillversjonen finnes ut fra `## Interface: 16001`, som tilsvarer `1.60.1`. Finner ikke CurseForge den, viser loggen hvilke versjoner som finnes. Legg da riktig id inn som variabelen `CF_GAME_VERSION` og kjør på nytt (**Actions → Slipp til CurseForge → Re-run**).
+
+### Beskrivelse til CurseForge-siden
+
+> **Juju** viser hva mobben under musa dropper, med sjanse i %. Prosentene starter fra Wowhead-tall og blir mer riktige etter hvert som alle Juju-spillere dreper og looter.
+>
+> - Hold musa over en mob for å se drops og %, også fra skinning. Listen skjules i kamp.
+> - **Juju Monster Drop Search** (`/juju`): søk på et item for å finne den beste moben å farme.
+> - Drop-tall deles automatisk i spillet via guild, gruppe og Juju-kanalen. Kanalen kan slås av med ON/OFF-knappen.
+> - Bare mob-ID, kills og item-tellinger deles. Ingen posisjon og ingen andre data om deg.
+>
+> Laget for WoW Forever. Drop-data fra QuestieDB (GPL-3.0). Kildekode: github.com/johsvend/Juju
+
 ## Tester
 
 - `python -m unittest discover -s tests -v`: parser, avvisning av tull-data, sammenslåing, «nyeste vinner», én spiller per konto, og issue-innsending.
 - «Bygg»-workflowen kjører testene, sjekker Lua-syntaks med `luac5.1` og lager `Juju.zip`.
+- «Slipp til CurseForge» sjekker Lua-syntaks på nytt før opplasting.

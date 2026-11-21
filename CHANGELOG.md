@@ -1,5 +1,8 @@
 # Endringslogg
 
+## 1.5.1
+- The download now has the version in its name (Juju-1.5.1.zip), so the CurseForge app shows the update button for new versions.
+
 ## 1.5.0
 - **Juju is now in English:** all windows, tooltips, the drop list and chat messages.
 - New English slash commands: `/juju channel`, `share`, `export`, `move`, `button`, `list`, `search`. The old Norwegian ones (`kanal`, `deling`, `eksport`, `flytt`, `knapp`) still work.

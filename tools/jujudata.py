@@ -12,7 +12,7 @@ tables). Nothing from a submission is ever executed.
 import hashlib
 import re
 
-MAX_NPC_ID = 10_000_000
+MAX_NPC_ID = 20_000_000          # skinning stats: npc + 10,000,000
 MAX_ITEM_ID = 10_000_000
 MAX_KILLS_PER_MOB = 5000          # one player's weight per mob is capped here
 MAX_ITEMS_PER_MOB = 400

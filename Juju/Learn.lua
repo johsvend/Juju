@@ -18,6 +18,7 @@ local looted = {}      -- [corpseGUID] = { [itemID] = true } items already count
 local nCounted = 0
 local lastGather = 0   -- GetTime() of the last skinning/mining/herb/pickpocket cast
 local lastSkin = 0     -- GetTime() of the last Skinning cast (its loot teaches J.IsSkinning)
+local skinned = {}     -- [corpseGUID] = true: this corpse's skinning already counted
 local lootReadAt
 
 local GATHER = { "Skinning$", "Mining$", "Herb Gathering$", "^Pick Pocket$", "^Fishing$", "^Disenchant$" }
@@ -191,11 +192,30 @@ end
 function L:LOOT_OPENED()
     if lootReadAt and GetTime() - lootReadAt < 1 then return end   -- LOOT_READY already read it
     lootReadAt = GetTime()
-    if GetTime() - lastSkin < 3 then                                -- skinning: remember what it gives
+    if GetTime() - lastSkin < 3 then                                -- skinning: its own statistics
+        local corpses = {}
         for slot = 1, (GetNumLootItems() or 0) do
             local link = GetLootSlotLink(slot)
             local id = link and not J.Secret(link) and tonumber(link:match("item:(%d+)"))
             if id then J.db.skinItems[id] = true end
+            for _, guid in ipairs(slotSources(slot)) do
+                local npcID = J.NpcID(guid)
+                if npcID then
+                    local c = corpses[guid]
+                    if not c then c = { npc = npcID, items = {} }; corpses[guid] = c end
+                    if id then c.items[id] = true end
+                end
+            end
+        end
+        -- one skin per corpse (only one player can skin it: no group check needed)
+        for guid, c in pairs(corpses) do
+            if not skinned[guid] then
+                skinned[guid] = true
+                local m = mob(J.SKIN_OFFSET + c.npc)
+                m.kills = m.kills + 1
+                for id in pairs(c.items) do m.items[id] = (m.items[id] or 0) + 1 end
+                J.db.ownDirty = true
+            end
         end
         return
     end

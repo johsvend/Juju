@@ -42,7 +42,18 @@ local function getRow(i)
         if GameTooltip.SetItemByID then GameTooltip:SetItemByID(self.e.item)
         else GameTooltip:SetHyperlink("item:" .. self.e.item) end
         GameTooltip:AddLine(" ")
-        if J.IsSkinning(self.e.item) then GameTooltip:AddLine("Fås ved Skinning", 0.78, 0.63, 0.38) end
+        if self.e.skin then
+            GameTooltip:AddLine("Fås ved Skinning", 0.78, 0.63, 0.38)
+            if (self.e.skins or 0) > 0 then
+                GameTooltip:AddDoubleLine("Skinning:", ("%d av %d skinn"):format(self.e.skinN or 0, self.e.skins),
+                    1, 0.82, 0, 1, 1, 1)
+            else
+                GameTooltip:AddLine("Ingen skinning-data ennå – tallet kommer når Juju-spillere skinner denne.", 0.7, 0.7, 0.7, true)
+            end
+            GameTooltip:AddDoubleLine("I vanlig loot (Wowhead):", J.Pct(self.e.pct), 1, 0.82, 0, 1, 1, 1)
+            GameTooltip:Show()
+            return
+        end
         local _, src = J.ShownPct(self.e)
         local how = src == "blandet" and ("Wowhead + %d Juju-kills"):format(self.e.kills or 0)
             or (src == "juju" and "Juju-kills" or "Wowhead")
@@ -140,12 +151,12 @@ function T:Refresh()
         frame:Hide(); shownGuid = nil; return
     end
     shownGuid, goneFor = guid, 0
-    local all, kills, players = J.MobDrops(npcID)
+    local all, kills, players, skins = J.MobDrops(npcID)
     -- no "?" lines: a drop is listed once there is a % for it (Wowhead's,
     -- blended with Juju kills, or from Juju kills alone)
     local list, hidden = {}, 0
     for _, e in ipairs(all) do
-        if J.ShownPct(e) then list[#list + 1] = e else hidden = hidden + 1 end
+        if J.ShownPct(e) or e.skin then list[#list + 1] = e else hidden = hidden + 1 end
     end
     if #list == 0 then frame:Hide(); return end     -- nothing known: stay out of the way
     -- (shownGuid stays set: this mob has nothing to show, don't recompute every poll)
@@ -168,7 +179,8 @@ function T:Refresh()
         r.name:SetText(J.ItemName(e.item) .. (J.IsSkinning(e.item) and " |cffc8a060(Skinning)|r" or ""))
         r.name:SetTextColor(J.QualityColor(J.ItemQuality(e.item)))
         -- one number, always the same yellow; it moves with every Juju kill
-        r.pct:SetText(J.Pct((J.ShownPct(e))))
+        local shownPct = J.ShownPct(e)
+        r.pct:SetText(shownPct and J.Pct(shownPct) or "|cffc8a060skinnes|r")   -- skinning, no data yet
         r:Show()
     end
     for i = shown + 1, #rows do rows[i]:Hide(); rows[i].e = nil end
@@ -179,6 +191,7 @@ function T:Refresh()
         parts[#parts + 1] = ("justert med %d kills%s"):format(kills,
             (players or 0) > 1 and (" fra " .. players .. " spillere") or "")
     end
+    if (skins or 0) > 0 then parts[#parts + 1] = ("skinnet %d ganger"):format(skins) end
     frame.foot:SetText(#parts > 0 and table.concat(parts, " · ") or "% fra Wowhead")
     frame:SetHeight(TOP + FOOT + shown * ROW_H + 4)
     frame:Show()

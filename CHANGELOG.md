@@ -1,5 +1,8 @@
 # Endringslogg
 
+## 1.4.3
+- **Egne skinning-tall:** Juju teller skinning per mob (hvor mange ganger den er skinnet, og hva det ga), og deler og sender dem som drops. Teknisk lagres de som mob-ID + 10 000 000. Skinning-items viser skinning-%, ikke den lille sjansen for leather i vanlig loot. Uten data står det «skinnes». Søket viser mobs som gir itemet ved skinning.
+
 ## 1.4.2
 - **Jevne tall uten kill-grense:** vist % = (Wowhead-% veid som 50 kills + Juju-drops) / (50 + Juju-kills). Hver kill fra en hvilken som helst Juju-spiller flytter tallet litt mot det spillerne faktisk ser, uten brå hopp. Items uten Wowhead-% vises fra første drop, dempet med 5 kills.
 

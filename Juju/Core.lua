@@ -17,6 +17,12 @@ J.PRIOR_KILLS = 50
 -- drop in one kill doesn't read 100 %
 J.NO_PRIOR_KILLS = 5
 
+-- Skinning is counted on its own: stats for "skinning mob X" are stored (and
+-- shared, uploaded, merged) under the key X + SKIN_OFFSET, as kills = times
+-- skinned and items = what skinning gave. Older Juju versions skip such keys.
+J.SKIN_OFFSET = 10000000
+J.SKIN_DAMP = 2           -- the first few skins are damped a little
+
 local C_Item = C_Item
 local getItemInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
 local getItemIcon = (C_Item and C_Item.GetItemIconByID) or GetItemIcon
@@ -231,7 +237,7 @@ function J.ParseBody(body)
         local npc, kills, list = part:match("^(%d+):(%d+):([0-9=,]*)$")
         if not npc then return nil end
         npc, kills = tonumber(npc), tonumber(kills)
-        if npc >= 1 and npc <= 10000000 and kills > 0 then
+        if npc >= 1 and npc <= 20000000 and kills > 0 then      -- > 10,000,000 = skinning stats
             local items, n = {}, 0
             for item, c in list:gmatch("(%d+)=(%d+)") do
                 item, c = tonumber(item), math.min(tonumber(c), kills)
@@ -328,12 +334,23 @@ function J.MobDrops(npcID)
         if n and kills > 0 then e.own, e.ownN = n * 100 / kills, n end
         e.kills, e.players = kills, players
     end
+    -- skinning: its own numbers, not the (tiny) chance to find leather in the loot
+    local skins, sitems = J.Stats(J.SKIN_OFFSET + npcID)
+    local have = {}
+    for _, e in ipairs(out) do
+        have[e.item] = true
+        if J.IsSkinning(e.item) then e.skin, e.skins, e.skinN = true, skins, sitems[e.item] or 0 end
+    end
+    for itemID, n in pairs(sitems) do
+        if not have[itemID] then out[#out + 1] = { item = itemID, skin = true, skins = skins, skinN = n } end
+    end
     table.sort(out, function(a, b)
+        if (a.skin or false) ~= (b.skin or false) then return not a.skin end   -- drops first, then skinning
         local pa, pb = (J.ShownPct(a)) or -1, (J.ShownPct(b)) or -1
         if pa ~= pb then return pa > pb end
         return a.item < b.item
     end)
-    return out, kills, players
+    return out, kills, players, skins
 end
 
 -- Every mob known to drop an item, best first (Wowhead % or Juju %).
@@ -355,8 +372,12 @@ function J.ItemSources(itemID)
     for _, e in ipairs(out) do
         local kills, items, players = J.Stats(e.npc)
         local n = items[itemID]
-        e.kills, e.players = kills, players
-        if n and kills > 0 then e.own, e.ownN = n * 100 / kills, n end
+        if e.npc > J.SKIN_OFFSET then                 -- "skinning mob X": show mob X, skinning numbers
+            e.npc, e.skin, e.skins, e.skinN, e.players = e.npc - J.SKIN_OFFSET, true, kills, n or 0, players
+        else
+            e.kills, e.players = kills, players
+            if n and kills > 0 then e.own, e.ownN = n * 100 / kills, n end
+        end
     end
     table.sort(out, function(a, b)
         local pa, pb = (J.ShownPct(a)) or -1, (J.ShownPct(b)) or -1
@@ -436,6 +457,11 @@ end
 
 -- The single % shown for a drop (and how it was made: "wowhead", "blandet", "juju")
 function J.ShownPct(e)
+    if e.skin then                                   -- skinning: how often skinning gives it
+        local skins, n = e.skins or 0, e.skinN or 0
+        if skins > 0 then return n / (skins + J.SKIN_DAMP) * 100, "skinning" end
+        return nil, "skinning"
+    end
     local kills, drops = e.kills or 0, e.ownN or 0
     if e.pct then
         if kills <= 0 then return e.pct, "wowhead" end

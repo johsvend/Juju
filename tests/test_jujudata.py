@@ -62,6 +62,12 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(sub["mobs"][38], {"kills": 10, "items": {2589: 3, 752: 1}})
         self.assertEqual(sub["mobs"][30], {"kills": 5, "items": {}})
 
+    def test_skinning_keys(self):
+        # skinning stats travel as npc + 10,000,000
+        sub = jujudata.parse_submission("JUJU1;abcd;1;10002248:4:4234=3,4232=1/2248:16:")
+        self.assertEqual(sub["mobs"][10002248], {"kills": 4, "items": {4234: 3, 4232: 1}})
+        self.assertIn(2248, sub["mobs"])
+
     def test_cap_per_player(self):
         sub = jujudata.parse_submission("JUJU1;abcd;1;38:50000:2589=25000")
         self.assertEqual(sub["mobs"][38]["kills"], jujudata.MAX_KILLS_PER_MOB)

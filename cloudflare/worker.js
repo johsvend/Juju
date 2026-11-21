@@ -15,7 +15,7 @@
 // as a normalized line. Nothing from the request is ever executed.
 
 const MAX_BODY = 4 * 1024 * 1024;
-const MAX_NPC_ID = 10_000_000;
+const MAX_NPC_ID = 20_000_000;   // skinning stats: npc + 10,000,000
 const MAX_ITEM_ID = 10_000_000;
 const MAX_KILLS_PER_MOB = 5000;
 const MAX_ITEMS_PER_MOB = 400;

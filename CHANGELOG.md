@@ -4,6 +4,7 @@
 - **Automatisk deling:** Juju lager opplastingstekst ved hver utlogging og `/reload` (bare hvis noe er nytt). Skru av med `/juju deling`.
 - **Juju-opplasteren** (Windows, ingen installasjon av andre programmer): sender data til Juju-mottakeren hvert 5. minutt og henter nyeste fellesdata inn i addonen. Fellesdata sjekkes linje for linje før de skrives.
 - **Juju-mottakeren** (Cloudflare Worker): sjekker innsendinger og lagrer dem i GitHub, der roboten slår dem sammen.
+- **Én nedlasting:** opplasteren ligger i `Juju/Opplaster` i Juju.zip.
 - Inntil 10 eksport-snapshots tas vare på, og alltid det fellesdataene inneholder, så egne kills aldri telles dobbelt.
 
 ## 1.1.0

@@ -1,7 +1,6 @@
-# Tests everything and builds two installable zips on every change:
-#   Juju.zip            – the addon (unzip into Interface/AddOns)
-#   Juju-opplaster.zip  – the automatic uploader for Windows
-# The zips are attached to the workflow run (Actions -> run -> Artifacts).
+# Tests everything and builds Juju.zip on every change: the addon with the
+# automatic uploader inside (Juju/Opplaster). Unzip into Interface/AddOns.
+# The zip is attached to the workflow run (Actions -> run -> Artifacts).
 name: Bygg
 
 on:
@@ -51,18 +50,19 @@ jobs:
           }
           if ($bad) { exit 1 } else { "Alle PowerShell-filer OK" }
 
-      - name: Lag zip-filer
+      # ONE download: the uploader lives inside the addon folder (Juju/Opplaster).
+      # WoW only loads what Juju.toc lists, so the extra files are ignored there.
+      - name: Lag Juju.zip
         run: |
-          zip -r -q Juju.zip Juju LICENSE README.md
-          mkdir -p dist/Juju-opplaster && cp uploader/* LICENSE dist/Juju-opplaster/
-          (cd dist && zip -r -q ../Juju-opplaster.zip Juju-opplaster)
+          mkdir -p dist
+          cp -r Juju dist/Juju
+          mkdir -p dist/Juju/Opplaster
+          cp uploader/* dist/Juju/Opplaster/
+          cp LICENSE README.md dist/Juju/
+          (cd dist && zip -r -q ../Juju.zip Juju)
+          unzip -l Juju.zip
 
       - uses: actions/upload-artifact@v4
         with:
           name: Juju
           path: Juju.zip
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Juju-opplaster
-          path: Juju-opplaster.zip

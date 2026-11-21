@@ -22,7 +22,8 @@ Drop-% blir bedre jo flere som deler data: hver spiller teller hva mobs dropper,
 
 1. Last ned `Juju.zip`: GitHub → *Actions* → siste «Bygg»-kjøring → *Artifacts*.
 2. Pakk ut slik at du får `World of Warcraft/_forever_/Interface/AddOns/Juju/Juju.toc`.
-3. Start spillet og sjekk at Juju er huket av i AddOns-listen.
+3. Dobbeltklikk `Juju/Opplaster/installer.cmd` én gang, så deles dropsene dine automatisk og du får fellesdata fra alle (se under). Dette kan hoppes over.
+4. Start spillet og sjekk at Juju er huket av i AddOns-listen.
 
 ## Kommandoer
 
@@ -41,9 +42,9 @@ Drop-% blir bedre jo flere som deler data: hver spiller teller hva mobs dropper,
 Jo flere som deler, jo sikrere blir prosentene. Spesielt for sjeldne drops, som trenger hundrevis av kills.
 
 **Automatisk med Juju-opplasteren (anbefalt):**
-1. Last ned `Juju-opplaster.zip`: GitHub → *Actions* → siste «Bygg» → *Artifacts*.
-2. Pakk ut og dobbeltklikk `installer.cmd`. Du trenger ikke administrator-rettigheter.
-3. Ferdig. Hver kill og hva den droppet blir registrert av Juju. Når du logger ut eller skriver `/reload` (det er da WoW lagrer data), sender opplasteren det som er nytt. Samtidig henter den de nyeste fellesdataene fra alle spillere, og de vises i spillet etter neste `/reload`.
+Opplasteren følger med i Juju-mappa (`Juju/Opplaster`).
+1. Dobbeltklikk `Interface/AddOns/Juju/Opplaster/installer.cmd` én gang. Du trenger ikke administrator-rettigheter.
+2. Ferdig. Hver kill og hva den droppet blir registrert av Juju. Når du logger ut eller skriver `/reload` (det er da WoW lagrer data), sender opplasteren det som er nytt. Samtidig henter den de nyeste fellesdataene fra alle spillere, og de vises i spillet etter neste `/reload`.
 
 ```
 WoW (Juju) ──► SavedVariables ──► Juju-opplaster ──► Cloudflare ──► GitHub ──► fellesdata ──► alle

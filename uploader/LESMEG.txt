@@ -6,6 +6,7 @@ de nyeste fellesdataene fra alle spillere inn i Juju. Da blir drop-% riktigere
 for alle.
 
 INSTALLERE
+  Denne mappa ligger i Interface\AddOns\Juju\Opplaster.
   Dobbeltklikk installer.cmd. Du trenger ikke administrator-rettigheter.
   Den kjører i bakgrunnen hvert 5. minutt og når du logger inn i Windows.
 

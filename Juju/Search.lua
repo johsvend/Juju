@@ -156,7 +156,7 @@ function S:Update()
     if S.chan and J.Sync then
         S.chan:SetText(J.Sync:InChannel() and "Forlat Juju-kanalen" or "Bli med i Juju-kanalen")
         local peers = J.Sync:Status()
-        S.syncText:SetText(J.db.autoShare and ("Delt med %d spillere"):format(peers) or "Deling av")
+        S.syncText:SetText(J.db.autoShare and ("Deling: på · data fra %d spillere"):format(peers) or "Deling: av (/juju deling)")
     end
 end
 
@@ -174,14 +174,26 @@ local function create()
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
     if frame.SetBackdrop then
         frame:SetBackdrop({
-            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+            bgFile = "Interface\\Buttons\\WHITE8X8",          -- solid: nothing shines through
             edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-            tile = true, tileSize = 32, edgeSize = 24,
+            tile = false, edgeSize = 24,
             insets = { left = 6, right = 6, top = 6, bottom = 6 },
         })
+        frame:SetBackdropColor(0.06, 0.06, 0.08, 0.97)
     end
     frame:Hide()
     tinsert(UISpecialFrames, "JujuSearch")
+
+    local function line(y, fromBottom)
+        local t = frame:CreateTexture(nil, "ARTWORK")
+        t:SetColorTexture(1, 0.82, 0, 0.25)
+        t:SetHeight(1)
+        if fromBottom then
+            t:SetPoint("BOTTOMLEFT", 14, y); t:SetPoint("BOTTOMRIGHT", -14, y)
+        else
+            t:SetPoint("TOPLEFT", 14, y); t:SetPoint("TOPRIGHT", -14, y)
+        end
+    end
 
     local title = text(frame, "GameFontNormalLarge", "CENTER")
     title:SetPoint("TOP", 0, -14)
@@ -189,11 +201,35 @@ local function create()
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", -4, -4)
 
+    line(-38)
+
+    back = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    back:SetSize(90, 22)
+    back:SetPoint("TOPRIGHT", -18, -48)
+    back:SetText("« Tilbake")
+    back:SetScript("OnClick", function() mode = "items"; S:Update() end)
+
     box = CreateFrame("EditBox", "JujuSearchBox", frame, "InputBoxTemplate")
-    box:SetSize(260, 20)
-    box:SetPoint("TOPLEFT", 24, -42)
+    box:SetHeight(22)
+    box:SetPoint("TOPLEFT", 26, -48)
+    box:SetPoint("RIGHT", back, "LEFT", -12, 0)
     box:SetAutoFocus(false)
+    box:SetTextInsets(18, 4, 0, 0)                     -- room for the magnifier
+    local glass = box:CreateTexture(nil, "OVERLAY")
+    glass:SetTexture("Interface\\Common\\UI-Searchbox-Icon")
+    glass:SetSize(14, 14)
+    glass:SetPoint("LEFT", 2, -1)
+    glass:SetVertexColor(0.7, 0.7, 0.7)
+    local hint = box:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+    hint:SetPoint("LEFT", 20, 0)
+    hint:SetText("Søk etter item … (eller shift-klikk et item)")
+    local function updateHint()
+        hint:SetShown((box:GetText() or "") == "" and not box:HasFocus())
+    end
+    box:SetScript("OnEditFocusGained", updateHint)
+    box:SetScript("OnEditFocusLost", updateHint)
     box:SetScript("OnTextChanged", function(self)
+        updateHint()
         local q = self:GetText() or ""
         if q ~= query then
             query, mode = q, "items"
@@ -204,31 +240,28 @@ local function create()
     box:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
     box:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
 
-    back = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    back:SetSize(90, 20)
-    back:SetPoint("LEFT", box, "RIGHT", 10, 0)
-    back:SetText("« Tilbake")
-    back:SetScript("OnClick", function() mode = "items"; S:Update() end)
-
     header = text(frame, "GameFontNormalSmall")
-    header:SetPoint("TOPLEFT", 18, -70)
+    header:SetPoint("TOPLEFT", 18, -80)
     header:SetWidth(W - 36)
+    line(-94)
 
     scroll = CreateFrame("ScrollFrame", "JujuSearchScroll", frame, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", 14, -88)
-    scroll:SetPoint("BOTTOMRIGHT", -32, 30)
+    scroll:SetPoint("TOPLEFT", 14, -100)
+    scroll:SetPoint("BOTTOMRIGHT", -32, 62)
     child = CreateFrame("Frame", nil, scroll)
     child:SetSize(W - 56, 10)
     scroll:SetScrollChild(child)
 
+    -- bottom: legend, then a status bar for sharing with the channel button
+    line(56, true)
     local foot = text(frame, "GameFontDisableSmall")
-    foot:SetPoint("BOTTOMLEFT", 18, 12)
+    foot:SetPoint("BOTTOMLEFT", 18, 40)
     foot:SetText("% = Wowhead · |cff80ff80grønn|r = Juju (dine + delte) · ? = ukjent")
 
     -- in-game sharing: status + Juju channel (joining needs a click)
     S.chan = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    S.chan:SetSize(150, 20)
-    S.chan:SetPoint("LEFT", back, "RIGHT", 6, 0)
+    S.chan:SetSize(170, 22)
+    S.chan:SetPoint("BOTTOMRIGHT", -16, 12)
     S.chan:SetScript("OnClick", function()
         if J.Sync:InChannel() then J.Sync:LeaveChannel() else J.Sync:JoinChannel() end
         C_Timer.After(2.5, function() S:Update() end)
@@ -240,8 +273,9 @@ local function create()
         GameTooltip:Show()
     end)
     S.chan:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    S.syncText = text(frame, "GameFontDisableSmall")
-    S.syncText:SetPoint("BOTTOMRIGHT", -18, 12)
+    S.syncText = text(frame, "GameFontHighlightSmall")
+    S.syncText:SetPoint("LEFT", frame, "BOTTOMLEFT", 18, 23)
+    S.syncText:SetPoint("RIGHT", S.chan, "LEFT", -8, 0)
 
     -- shift-click an item into the box
     if type(ChatEdit_InsertLink) == "function" then

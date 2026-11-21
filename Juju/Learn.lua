@@ -17,6 +17,7 @@ local counted = {}     -- [corpseGUID] = true   (this session: kill already coun
 local looted = {}      -- [corpseGUID] = { [itemID] = true } items already counted
 local nCounted = 0
 local lastGather = 0   -- GetTime() of the last skinning/mining/herb/pickpocket cast
+local lastSkin = 0     -- GetTime() of the last Skinning cast (its loot teaches J.IsSkinning)
 local lootReadAt
 
 local GATHER = { "Skinning$", "Mining$", "Herb Gathering$", "^Pick Pocket$", "^Fishing$", "^Disenchant$" }
@@ -190,7 +191,15 @@ end
 function L:LOOT_OPENED()
     if lootReadAt and GetTime() - lootReadAt < 1 then return end   -- LOOT_READY already read it
     lootReadAt = GetTime()
-    if GetTime() - lastGather < 3 then return end                   -- skinning etc., not a drop
+    if GetTime() - lastSkin < 3 then                                -- skinning: remember what it gives
+        for slot = 1, (GetNumLootItems() or 0) do
+            local link = GetLootSlotLink(slot)
+            local id = link and not J.Secret(link) and tonumber(link:match("item:(%d+)"))
+            if id then J.db.skinItems[id] = true end
+        end
+        return
+    end
+    if GetTime() - lastGather < 3 then return end                   -- mining etc., not a drop
     if IsFishingLoot and IsFishingLoot() then return end
     local corpses = {}   -- [guid] = { npc, items = {}, links = {} }
     for slot = 1, (GetNumLootItems() or 0) do
@@ -212,7 +221,11 @@ L.LOOT_READY = L.LOOT_OPENED
 function L:LOOT_CLOSED() lootReadAt = nil end
 
 function L:UNIT_SPELLCAST_SUCCEEDED(unit, castGUID, spellID)
-    if unit == "player" and isGather(spellID) then lastGather = GetTime() end
+    if unit == "player" and isGather(spellID) then
+        lastGather = GetTime()
+        local name = spellID and not J.Secret(spellID) and spellName(spellID)
+        if name and not J.Secret(name) and name:find("Skinning$") then lastSkin = GetTime() end
+    end
 end
 
 ----------------------------------------------------------------------

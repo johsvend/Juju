@@ -324,7 +324,7 @@ function J.MobDrops(npcID)
         e.kills, e.players = kills, players
     end
     table.sort(out, function(a, b)
-        local pa, pb = a.pct or a.own or -1, b.pct or b.own or -1
+        local pa, pb = (J.ShownPct(a)) or -1, (J.ShownPct(b)) or -1
         if pa ~= pb then return pa > pb end
         return a.item < b.item
     end)
@@ -353,7 +353,7 @@ function J.ItemSources(itemID)
         if n and kills > 0 then e.own, e.ownN, e.kills, e.players = n * 100 / kills, n, kills, players end
     end
     table.sort(out, function(a, b)
-        local pa, pb = a.pct or a.own or -1, b.pct or b.own or -1
+        local pa, pb = (J.ShownPct(a)) or -1, (J.ShownPct(b)) or -1
         if pa ~= pb then return pa > pb end
         return a.npc < b.npc
     end)
@@ -414,6 +414,27 @@ function J.Export()
     return ("JUJU1;%s;%d;%s"):format(J.db.id, serial, body), n
 end
 
+-- Items you get by Skinning (not a normal drop). The list grows by itself:
+-- Learn.lua adds whatever your own skinning gives (JujuDB.skinItems).
+J.SKINNING = {}
+for _, id in ipairs({
+    2934, 2318, 783, 2319, 4232, 4234, 4235, 4304, 8169, 8170, 8171,       -- scraps, leathers, hides
+    8154, 8167, 8165, 7286, 6470, 6471, 4461, 7392, 5784, 5785,            -- scales, raptor hide, ...
+    15412, 15414, 15415, 15416, 15417, 15419, 15422, 15423, 17012, 15408,  -- dragonscales, special leathers
+    20381, 19767, 19768, 12731,                                            -- dreamscale, ZG hides
+}) do J.SKINNING[id] = true end
+
+function J.IsSkinning(itemID)
+    return J.SKINNING[itemID] or (J.db and J.db.skinItems and J.db.skinItems[itemID]) or false
+end
+
+-- The single % shown for a drop: Juju's own number once the mob has enough
+-- kills and the item has dropped there, otherwise Wowhead's.
+function J.ShownPct(e)
+    if e.own and (e.kills or 0) >= J.MIN_KILLS then return e.own, "juju" end
+    return e.pct, e.pct and "wowhead" or nil
+end
+
 function J.Pct(p)
     if not p then return "?" end
     if p >= 10 then return ("%d%%"):format(math.floor(p + 0.5)) end
@@ -428,6 +449,7 @@ local function defaults(db)
     db.version = 1
     db.mobs = type(db.mobs) == "table" and db.mobs or {}            -- own loot stats
     db.itemNames = type(db.itemNames) == "table" and db.itemNames or {}
+    db.skinItems = type(db.skinItems) == "table" and db.skinItems or {}
     db.target = type(db.target) == "table" and db.target or {}
     if db.target.enabled == nil then db.target.enabled = true end
     if type(db.target.maxRows) ~= "number" then db.target.maxRows = 15 end

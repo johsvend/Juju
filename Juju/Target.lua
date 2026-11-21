@@ -42,6 +42,9 @@ local function getRow(i)
         if GameTooltip.SetItemByID then GameTooltip:SetItemByID(self.e.item)
         else GameTooltip:SetHyperlink("item:" .. self.e.item) end
         GameTooltip:AddLine(" ")
+        if J.IsSkinning(self.e.item) then GameTooltip:AddLine("Fås ved Skinning", 0.78, 0.63, 0.38) end
+        local _, src = J.ShownPct(self.e)
+        GameTooltip:AddDoubleLine("Vist:", src == "juju" and "Juju-%" or "Wowhead-%", 1, 0.82, 0, 1, 1, 1)
         GameTooltip:AddDoubleLine("Wowhead:", J.Pct(self.e.pct), 1, 0.82, 0, 1, 1, 1)
         if self.e.kills and self.e.kills > 0 then
             GameTooltip:AddDoubleLine("Juju-data:", ("%s (%d av %d kills)"):format(J.Pct(self.e.own or 0),
@@ -162,16 +165,10 @@ function T:Refresh()
         local r = getRow(i)
         r.e = e
         r.icon:SetTexture(J.ItemIcon(e.item))
-        r.name:SetText(J.ItemName(e.item))
+        r.name:SetText(J.ItemName(e.item) .. (J.IsSkinning(e.item) and " |cffc8a060(Skinning)|r" or ""))
         r.name:SetTextColor(J.QualityColor(J.ItemQuality(e.item)))
-        local p
-        if e.pct then
-            p = J.Pct(e.pct)
-            if e.own then p = p .. (" |cff80ff80(%s)|r"):format(J.Pct(e.own)) end
-        else
-            p = ("|cff80ff80%s|r"):format(J.Pct(e.own))
-        end
-        r.pct:SetText(p)
+        -- one number, always in the same yellow: Juju's when it has enough kills
+        r.pct:SetText(J.Pct((J.ShownPct(e))))
         r:Show()
     end
     for i = shown + 1, #rows do rows[i]:Hide(); rows[i].e = nil end
@@ -182,7 +179,7 @@ function T:Refresh()
             or ("%d skjult til %d/%d kills"):format(hidden, kills, J.MIN_KILLS)
     end
     if kills > 0 and enough then
-        parts[#parts + 1] = ("|cff80ff80grønn|r = Juju %% (%d kills%s)"):format(kills,
+        parts[#parts + 1] = ("Juju-%% fra %d kills%s"):format(kills,
             (players or 0) > 1 and (", " .. players .. " spillere") or "")
     end
     frame.foot:SetText(#parts > 0 and table.concat(parts, " · ") or "% fra Wowhead")

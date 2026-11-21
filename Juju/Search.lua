@@ -123,7 +123,7 @@ function S:Update()
             local r = getRow(n)
             r.item, r.npc, r.e = it.id, nil, nil
             r.icon:SetTexture(J.ItemIcon(it.id)); r.icon:Show()
-            r.a:SetText(J.ItemName(it.id))
+            r.a:SetText(J.ItemName(it.id) .. (J.IsSkinning(it.id) and " |cffc8a060(Skinning)|r" or ""))
             r.a:SetTextColor(J.QualityColor(J.ItemQuality(it.id)))
             r.b:SetText(("%d mobs"):format(it.n))
             r.c:SetText("›")
@@ -145,9 +145,8 @@ function S:Update()
             local lvl = hi > lo and (lo .. "-" .. hi) or (lo > 0 and tostring(lo) or "?")
             local z = J.ZoneName(map)
             r.b:SetText(("Lvl %s%s"):format(lvl, z ~= "" and (" · " .. z) or ""))
-            local p = e.pct and J.Pct(e.pct) or "|cff808080?|r"
-            if e.own then p = p .. (" |cff80ff80(%s)|r"):format(J.Pct(e.own)) end
-            r.c:SetText(p)
+            local shown = J.ShownPct(e)
+            r.c:SetText(shown and J.Pct(shown) or "|cff808080?|r")
             r:Show()
         end
     end

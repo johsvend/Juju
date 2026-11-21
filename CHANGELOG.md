@@ -1,5 +1,9 @@
 # Endringslogg
 
+## 1.4.1
+- **Ett gult tall per drop:** Juju-% vises i stedet for Wowhead-% når mobben har minst 10 kills og itemet har droppet. Ellers vises Wowhead-%. Tooltipen viser begge og hvilken som vises. Listene sorteres etter tallet som vises.
+- **«(Skinning)» etter items fra skinning**, for eksempel leather, hides og scales. Juju lærer flere selv når du skinner, og skinning-loot telles fortsatt ikke som drop.
+
 ## 1.4.0
 - **Ingen dobbelttelling i gruppe og raid:** Juju-spillerne i gruppa avtaler usynlig hvem som teller et lik (den med alfabetisk første navn blant dem som så det), og den som teller får med alle items alle så. Alene telles det som før.
 - **Fellesdata deles i spillet:** GitHub signerer fellesdataene (RSA-2048 og SHA-256). Har noen nyere fellesdata, får du dem automatisk uten å laste ned Juju på nytt. Pakker med feil signatur kastes. Ingen karakternavn ligger i repoet.

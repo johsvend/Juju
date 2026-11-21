@@ -12,8 +12,8 @@ Drop-% blir bedre jo flere som bruker Juju. Hver spiller teller hva mobs dropper
 
 - **Drop-liste når musa er over en mob:** hold musa over en mob, så vises det den dropper, med høyest % øverst. Listen forsvinner når musa flyttes vekk, og skjules når du angriper. Den blir stående mens musa er over selve listen, så du kan dra den dit du vil.
 - **To kilder for %:**
-  - hvit % kommer fra Wowhead (via QuestieDB)
-  - grønn % kommer fra Juju: dine egne kills pluss det andre Juju-spillere har delt
+  - Wowhead-% (via QuestieDB), eller Juju-% (dine og andre Juju-spilleres kills) når mobben har minst 10 kills. Det vises bare ett tall.
+  - items fra skinning er merket «(Skinning)»
   - drops uten kjent % skjules til det finnes minst 10 kills av mobben
 - **Søk:** `/juju linen`, eller klikk på Juju-knappen ved minimap. Du får opp alle mobs som dropper itemet, med level, sone og %.
 - **Automatisk deling:** hver kill og hva den droppet deles med Juju-spillere i guilden din, gruppen din og Juju-kanalen.

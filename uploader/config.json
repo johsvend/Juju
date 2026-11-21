@@ -1,5 +1,5 @@
 {
-  "endpoint": "https://SETT-INN-ADRESSEN-TIL-JUJU-MOTTAKEREN/submit",
+  "endpoint": "https://juju-mottaker.johsvend.workers.dev/submit",
   "sharedUrl": "https://raw.githubusercontent.com/johsvend/Juju/main/Juju/SharedData.lua",
   "wowPath": ""
 }

@@ -19,6 +19,11 @@ local nCounted = 0
 local lastGather = 0   -- GetTime() of the last skinning/mining/herb/pickpocket cast
 local lastSkin = 0     -- GetTime() of the last Skinning cast (its loot teaches J.IsSkinning)
 local skinned = {}     -- [corpseGUID] = true: this corpse's skinning already counted
+-- The game doesn't tell which mob skinning loot came from, and right-clicking a
+-- corpse to skin it doesn't make it your target. So the corpse is noted when the
+-- skinning cast starts: the dead mob under the mouse, else your dead target,
+-- else the mob name the cast was aimed at.
+local skinCast         -- { guid, name, t }
 local lootReadAt
 
 local GATHER = { "Skinning$", "Mining$", "Herb Gathering$", "^Pick Pocket$", "^Fishing$", "^Disenchant$" }
@@ -36,6 +41,39 @@ local function isGather(spellID)
         if name:find(pat) then return true end
     end
     return false
+end
+
+local function isSkinning(spellID)
+    if not spellID or J.Secret(spellID) then return false end
+    local name = spellName(spellID)
+    return name ~= nil and not J.Secret(name) and name:find("Skinning$") ~= nil
+end
+
+-- GUID of a dead creature on this unit, or nil
+local function deadCreature(unit)
+    if not UnitExists or not UnitExists(unit) then return nil end
+    local guid = UnitGUID(unit)
+    if not guid or J.Secret(guid) or not J.NpcID(guid) then return nil end
+    local dead = UnitIsDead(unit)
+    if J.Secret(dead) or not dead then return nil end
+    return guid
+end
+
+-- mob name -> npcID (first match in the shipped data, else a mob you learned)
+local byName
+local function npcByName(name)
+    if not name then return nil end
+    if not byName then
+        byName = {}
+        for id, raw in pairs(J.NPCS) do
+            local n = raw:match("^([^|]*)")
+            if n and (not byName[n] or id < byName[n]) then byName[n] = id end
+        end
+    end
+    if byName[name] then return byName[name] end
+    for id, m in pairs(J.db.mobs) do
+        if m.name == name and id < J.SKIN_OFFSET then return id end
+    end
 end
 
 local function mob(npcID)
@@ -207,6 +245,21 @@ function L:LOOT_OPENED()
                 end
             end
         end
+        -- the game named no creature: use the corpse noted when the skinning started
+        if next(corpses) == nil and skinCast and GetTime() - skinCast.t < 10 then
+            local npcID = skinCast.guid and J.NpcID(skinCast.guid) or npcByName(skinCast.name)
+            if npcID then
+                local c = { npc = npcID, items = {} }
+                for slot = 1, (GetNumLootItems() or 0) do
+                    local link = GetLootSlotLink(slot)
+                    local id = link and not J.Secret(link) and tonumber(link:match("item:(%d+)"))
+                    if id then c.items[id] = true end
+                end
+                -- no GUID: one skin per cast (the cast can only skin one corpse)
+                corpses[skinCast.guid or ("cast:" .. skinCast.t)] = c
+            end
+        end
+        skinCast = nil
         -- one skin per corpse (only one player can skin it: no group check needed)
         for guid, c in pairs(corpses) do
             if not skinned[guid] then
@@ -239,6 +292,12 @@ end
 L.LOOT_READY = L.LOOT_OPENED
 
 function L:LOOT_CLOSED() lootReadAt = nil end
+
+function L:UNIT_SPELLCAST_SENT(unit, target, castGUID, spellID)
+    if unit ~= "player" or not isSkinning(spellID) then return end
+    local name = (type(target) == "string" and not J.Secret(target) and target ~= "") and target or nil
+    skinCast = { guid = deadCreature("mouseover") or deadCreature("target"), name = name, t = GetTime() }
+end
 
 function L:UNIT_SPELLCAST_SUCCEEDED(unit, castGUID, spellID)
     if unit == "player" and isGather(spellID) then
@@ -279,6 +338,7 @@ function L:Init()
     f:RegisterEvent("LOOT_READY")
     f:RegisterEvent("LOOT_OPENED")
     f:RegisterEvent("LOOT_CLOSED")
+    f:RegisterUnitEvent("UNIT_SPELLCAST_SENT", "player")      -- which corpse is being skinned
     f:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
     f:RegisterUnitEvent("UNIT_HEALTH", "target")   -- target died -> a kill (no combat log)
     f:RegisterEvent("PLAYER_REGEN_ENABLED")            -- fight over: group corpses can be settled

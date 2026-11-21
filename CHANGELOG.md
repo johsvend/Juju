@@ -1,5 +1,8 @@
 # Endringslogg
 
+## 1.4.4
+- **Rettet: skinning ble ikke telt på Forever.** Spillet oppgir ikke hvilken mob skinning-loot kommer fra, og et lik du høyreklikker blir ikke target. Juju noterer nå liket når skinningen starter: liket under musa, ellers target, ellers mob-navnet skinningen var rettet mot.
+
 ## 1.4.3
 - **Egne skinning-tall:** Juju teller skinning per mob (hvor mange ganger den er skinnet, og hva det ga), og deler og sender dem som drops. Teknisk lagres de som mob-ID + 10 000 000. Skinning-items viser skinning-%, ikke den lille sjansen for leather i vanlig loot. Uten data står det «skinnes». Søket viser mobs som gir itemet ved skinning.
 

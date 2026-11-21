@@ -191,11 +191,84 @@ local function includedSnapshot()
     return serial and J.db.exports[serial] or nil
 end
 
+----------------------------------------------------------------------
+-- Other players' counts received in-game (Sync.lua):
+--   J.db.peers[id] = { serial, mobs = { [npc] = { kills, items = { [item] = n } } }, from, t }
+-- A player already in SharedData is skipped (their counts are in it), so
+-- nobody is counted twice. Summed once into peerAgg, rebuilt when peers change.
+----------------------------------------------------------------------
+local peerAgg
+function J.PeersChanged() peerAgg = nil end
+
+local function peerAggregate()
+    if peerAgg then return peerAgg end
+    peerAgg = {}
+    for id, p in pairs(J.db.peers) do
+        if id ~= J.db.id and not (J.SHARED_CONTRIB and J.SHARED_CONTRIB[id]) and type(p.mobs) == "table" then
+            for npc, m in pairs(p.mobs) do
+                local a = peerAgg[npc]
+                if not a then a = { kills = 0, items = {}, players = 0 }; peerAgg[npc] = a end
+                a.kills, a.players = a.kills + (m.kills or 0), a.players + 1
+                for item, n in pairs(m.items or {}) do a.items[item] = (a.items[item] or 0) + n end
+            end
+        end
+    end
+    return peerAgg
+end
+
+-- "npc:kills:item=n,item=n/npc:..." -> mobs table, with the same checks and
+-- caps as the merge tool and the receiver (tools/jujudata.py, worker.js)
+local MAX_KILLS_PER_MOB, MAX_ITEMS_PER_MOB, MAX_MOBS = 5000, 400, 20000
+function J.ParseBody(body)
+    if type(body) ~= "string" or #body > 500000 or body:find("[^0-9:=,/]") then return nil end
+    local mobs, count = {}, 0
+    for part in body:gmatch("[^/]+") do
+        local npc, kills, list = part:match("^(%d+):(%d+):([0-9=,]*)$")
+        if not npc then return nil end
+        npc, kills = tonumber(npc), tonumber(kills)
+        if npc >= 1 and npc <= 10000000 and kills > 0 then
+            local items, n = {}, 0
+            for item, c in list:gmatch("(%d+)=(%d+)") do
+                item, c = tonumber(item), math.min(tonumber(c), kills)
+                if item >= 1 and item <= 10000000 and c > 0 then items[item] = c; n = n + 1 end
+            end
+            if n <= MAX_ITEMS_PER_MOB then
+                if kills > MAX_KILLS_PER_MOB then
+                    local f = MAX_KILLS_PER_MOB / kills
+                    for item, c in pairs(items) do items[item] = math.max(1, math.floor(c * f + 0.5)) end
+                    kills = MAX_KILLS_PER_MOB
+                end
+                mobs[npc] = { kills = kills, items = items }
+                count = count + 1
+                if count > MAX_MOBS then return nil end
+            end
+        end
+    end
+    if count == 0 then return nil end
+    return mobs
+end
+
+-- mobs table -> body text (sorted, so the same data gives the same text)
+function J.BodyOf(mobs)
+    local npcs, parts = {}, {}
+    for npc, m in pairs(mobs) do if (m.kills or 0) > 0 then npcs[#npcs + 1] = npc end end
+    table.sort(npcs)
+    for _, npc in ipairs(npcs) do
+        local m, ids, list = mobs[npc], {}, {}
+        for id in pairs(m.items) do ids[#ids + 1] = id end
+        table.sort(ids)
+        for _, id in ipairs(ids) do list[#list + 1] = id .. "=" .. math.min(m.items[id], m.kills) end
+        parts[#parts + 1] = npc .. ":" .. m.kills .. ":" .. table.concat(list, ",")
+    end
+    return table.concat(parts, "/"), #parts
+end
+
 -- Combined counts for one mob: kills, { [itemID] = n }, players
 function J.Stats(npcID)
     local sk, sitems, players = sharedFor(npcID)
     local kills, items = sk, {}
     for id, n in pairs(sitems) do items[id] = n end
+    local inShared = J.SHARED_CONTRIB and J.db.id and J.SHARED_CONTRIB[J.db.id]
     local snap = includedSnapshot()
     local old = snap and snap[npcID]
     if old then                                   -- take your already-sent counts out
@@ -203,10 +276,18 @@ function J.Stats(npcID)
         for id, n in pairs(old.items or {}) do items[id] = (items[id] or 0) - n end
     end
     local own = J.db.mobs[npcID]
+    -- your counts are in SharedData but the matching snapshot is gone: trust
+    -- SharedData alone rather than risk counting your kills twice
+    if inShared and not snap then own = nil end
     if own then                                   -- and add your current counts
         kills = kills + (own.kills or 0)
         for id, n in pairs(own.items) do items[id] = (items[id] or 0) + n end
         if own.kills and own.kills > 0 and not old then players = players + 1 end
+    end
+    local pa = peerAggregate()[npcID]
+    if pa then                                    -- players met in-game, not yet in SharedData
+        kills, players = kills + pa.kills, players + pa.players
+        for id, n in pairs(pa.items) do items[id] = (items[id] or 0) + n end
     end
     if kills < 0 then kills = 0 end
     for id, n in pairs(items) do
@@ -263,6 +344,9 @@ function J.ItemSources(itemID)
     for _, npc in ipairs(sharedNpcsWith(itemID)) do
         if not seen[npc] then seen[npc] = true; out[#out + 1] = { npc = npc } end
     end
+    for npc, a in pairs(peerAggregate()) do
+        if a.items[itemID] and not seen[npc] then seen[npc] = true; out[#out + 1] = { npc = npc } end
+    end
     for _, e in ipairs(out) do
         local kills, items, players = J.Stats(e.npc)
         local n = items[itemID]
@@ -282,39 +366,52 @@ end
 -- A snapshot is kept, so once SharedData includes this export your own
 -- counts aren't added twice (see J.Stats). The 10 newest are kept.
 ----------------------------------------------------------------------
-function J.Export()
-    local serial = time()
-    local parts, snap = {}, {}
-    local npcs = {}
-    for npc in pairs(J.db.mobs) do npcs[#npcs + 1] = npc end
-    table.sort(npcs)
-    for _, npc in ipairs(npcs) do
-        local m = J.db.mobs[npc]
+-- copy of your current counts (what an export/record with this serial contains)
+local function snapshotNow()
+    local snap = {}
+    for npc, m in pairs(J.db.mobs) do
         if m.kills and m.kills > 0 then
-            local ids, list = {}, {}
-            for id in pairs(m.items) do ids[#ids + 1] = id end
-            table.sort(ids)
             local copy = {}
-            for _, id in ipairs(ids) do
-                local n = math.min(m.items[id], m.kills)
-                list[#list + 1] = id .. "=" .. n
-                copy[id] = n
-            end
-            parts[#parts + 1] = npc .. ":" .. m.kills .. ":" .. table.concat(list, ",")
+            for id, n in pairs(m.items) do copy[id] = math.min(n, m.kills) end
             snap[npc] = { kills = m.kills, items = copy }
         end
     end
-    J.db.exports[serial] = snap
-    -- keep the 3 newest, and ALWAYS the one SharedData includes (else your
-    -- own kills would count twice)
+    return snap
+end
+
+-- Your own record for in-game sharing and uploads: serial + body. The serial
+-- only moves on when your counts changed, and a snapshot is kept for it, so
+-- once it shows up in SharedData your kills aren't counted twice.
+function J.OwnRecord()
+    if not J.db.ownSerial or J.db.ownDirty or not J.db.exports[J.db.ownSerial] then
+        local serial = math.max(time(), (J.db.ownSerial or 0) + 1)
+        J.db.exports[serial] = snapshotNow()
+        J.db.ownSerial, J.db.ownDirty = serial, nil
+        J.PruneSnapshots()
+    end
+    return J.db.ownSerial, (J.BodyOf(J.db.exports[J.db.ownSerial]))
+end
+
+function J.PruneSnapshots()
     local keep = J.SHARED_CONTRIB and J.SHARED_CONTRIB[J.db.id]
     local serials = {}
     for s in pairs(J.db.exports) do
-        if s ~= keep then serials[#serials + 1] = s end
+        if s ~= keep and s ~= J.db.ownSerial then serials[#serials + 1] = s end
     end
     table.sort(serials)
     for i = 1, #serials - 10 do J.db.exports[serials[i]] = nil end
-    return ("JUJU1;%s;%d;%s"):format(J.db.id, serial, table.concat(parts, "/")), #parts
+end
+
+function J.Export()
+    local serial = math.max(time(), (J.db.ownSerial or 0) + 1)
+    local snap = snapshotNow()
+    local body, n = J.BodyOf(snap)
+    J.db.exports[serial] = snap
+    J.db.ownSerial, J.db.ownDirty = serial, nil
+    -- keep the 10 newest, and ALWAYS the one SharedData includes (else your
+    -- own kills would count twice)
+    J.PruneSnapshots()
+    return ("JUJU1;%s;%d;%s"):format(J.db.id, serial, body), n
 end
 
 function J.Pct(p)
@@ -345,7 +442,10 @@ local function defaults(db)
         db.id = table.concat(t)
     end
     db.exports = type(db.exports) == "table" and db.exports or {}
-    if db.autoShare == nil then db.autoShare = true end   -- Juju-opplasteren sends db.upload
+    if db.autoShare == nil then db.autoShare = true end   -- in-game sharing + uploads
+    db.peers = type(db.peers) == "table" and db.peers or {}
+    db.peerLimit = type(db.peerLimit) == "table" and db.peerLimit or {}
+    db.sync = type(db.sync) == "table" and db.sync or {}
 end
 
 -- Automatic sharing: on every logout and /reload (the only times WoW writes
@@ -359,12 +459,23 @@ local function totalKills()
 end
 
 function J.PrepareUpload()
-    if not J.db.autoShare then J.db.upload = nil; return end
-    local total = totalKills()
-    if total == 0 then return end
-    if J.db.upload and J.db.uploadKills == total then return end
-    local txt, n = J.Export()
-    if n > 0 then J.db.upload, J.db.uploadKills = txt, total end
+    if not J.db.autoShare then J.db.upload, J.db.uploads = nil, nil; return end
+    local list = {}
+    if totalKills() > 0 then
+        local serial, body = J.OwnRecord()
+        if body ~= "" then list[#list + 1] = ("JUJU1;%s;%d;%s"):format(J.db.id, serial, body) end
+    end
+    -- what other players shared with you in-game: the uploader (only on the
+    -- maintainer's PC) sends it on, so it reaches everyone through SharedData
+    for id, p in pairs(J.db.peers) do
+        local inShared = J.SHARED_CONTRIB and J.SHARED_CONTRIB[id]
+        if id ~= J.db.id and (not inShared or inShared < p.serial) and type(p.mobs) == "table" then
+            local body = J.BodyOf(p.mobs)
+            if body ~= "" then list[#list + 1] = ("JUJU1;%s;%d;%s"):format(id, p.serial, body) end
+        end
+    end
+    J.db.upload = list[1]                -- older uploaders read this one
+    J.db.uploads = #list > 0 and list or nil
 end
 
 local boot = CreateFrame("Frame")
@@ -397,7 +508,7 @@ boot:SetScript("OnEvent", function(_, event, arg1, arg2)
         J.db = JujuDB
     elseif event == "PLAYER_LOGIN" then
         if not J.db then return end
-        for _, mod in ipairs({ J.Learn, J.Target, J.Search }) do
+        for _, mod in ipairs({ J.Learn, J.Sync, J.Target, J.Search }) do
             if mod and mod.Init then
                 local ok, err = pcall(mod.Init, mod)
                 if not ok then J.Print("feil ved oppstart: " .. tostring(err)) end
@@ -427,8 +538,17 @@ SlashCmdList.JUJU = function(msg)
         J.Print("drop-listen er satt tilbake under target-rammen (gjelder etter /reload).")
     elseif msg == "deling" then
         J.db.autoShare = not J.db.autoShare
-        if not J.db.autoShare then J.db.upload = nil end
-        J.Print("automatisk deling (via Juju-opplasteren): " .. (J.db.autoShare and "på" or "av"))
+        if not J.db.autoShare then J.db.upload, J.db.uploads = nil, nil end
+        J.Print("deling med andre Juju-spillere: " .. (J.db.autoShare and "på" or "av"))
+    elseif msg == "kanal" then
+        if J.Sync:InChannel() then J.Sync:LeaveChannel(); J.Print("forlot Juju-kanalen.")
+        else J.Sync:JoinChannel(); J.Print("ble med i Juju-kanalen (skjult i chatten).") end
+    elseif msg == "sync" or msg == "status" then
+        local n, open, closed, st = J.Sync:Status()
+        J.Print(("deling: %s · %d spillere mottatt · sender til: %s"):format(J.db.autoShare and "på" or "av", n,
+            #open > 0 and table.concat(open, ", ") or "ingen (ikke i guild/gruppe/Juju-kanal)"))
+        print(("  meldinger sendt %d · poster mottatt %d · nye spillere %d"):format(st.sent, st.got, st.new))
+        if #closed > 0 then print("  stengt denne økten: " .. table.concat(closed, ", ")) end
     elseif msg == "eksport" or msg == "export" then
         J.Search:ShowExport()
     elseif msg == "knapp" then

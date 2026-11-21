@@ -1,5 +1,14 @@
 # Endringslogg
 
+## 1.3.0
+- **Deling inne i spillet, uten å installere noe:** Juju deler kill- og drop-tellinger usynlig med andre Juju-spillere i guild, gruppe/raid og Juju-kanalen. Dataene sprer seg videre fra spiller til spiller.
+- **Juju-kanalen:** «Bli med i Juju-kanalen» i søkevinduet, eller `/juju kanal`. Kanalen er skjult fra chatten.
+- **Sikkerhet:** alt som mottas sjekkes etter samme regler som på GitHub. Juju tar bare imot data den har bedt om, én spiller kan føre inn maks 30 nye spillere per dag, og maks 1000 lagres.
+- **Forever-hensyn:** sier spillet nei til en vei, stenges den for resten av økten. Ingenting sendes i kamp, og maks 2 meldinger sendes per sekund.
+- `/juju sync` viser status for delingen.
+- **Opplasteren er bare for vedlikeholderen**, og er ikke lenger med i Juju.zip. Den sender alt vedlikeholderens Juju har samlet inn, mange spillere per forespørsel.
+- **Ingen dobbelttelling:** hvis fellesdataene inneholder dine kills men det tilhørende snapshotet mangler, brukes bare fellesdataene.
+
 ## 1.2.0
 - **Automatisk deling:** Juju lager opplastingstekst ved hver utlogging og `/reload` (bare hvis noe er nytt). Skru av med `/juju deling`.
 - **Juju-opplasteren** (Windows, ingen installasjon av andre programmer): sender data til Juju-mottakeren hvert 5. minutt og henter nyeste fellesdata inn i addonen. Fellesdata sjekkes linje for linje før de skrives.

@@ -14,12 +14,14 @@
 // Submissions are untrusted: only numbers that pass the checks are written,
 // as a normalized line. Nothing from the request is ever executed.
 
-const MAX_BODY = 512 * 1024;
+const MAX_BODY = 4 * 1024 * 1024;
 const MAX_NPC_ID = 10_000_000;
 const MAX_ITEM_ID = 10_000_000;
 const MAX_KILLS_PER_MOB = 5000;
 const MAX_ITEMS_PER_MOB = 400;
 const MAX_MOBS = 20000;
+const MAX_LINES = 50;            // players per request
+
 const EXPORT_RE = /JUJU1;([0-9a-fA-F]{4,32});(\d{1,12});([0-9:=,/]*)/;
 
 export class BadData extends Error {}
@@ -140,20 +142,36 @@ export default {
     const text = await request.text();
     if (text.length > MAX_BODY) return json(413, { error: "for stor" });
 
-    let sub;
-    try {
-      sub = parseExport(text);
-    } catch (e) {
-      if (e instanceof BadData) return json(400, { error: e.message });
-      throw e;
+    // one line per player (the maintainer's Juju also forwards what it
+    // received from other players in-game); at most MAX_LINES per request
+    const lines = text.split(/\r?\n/).filter((l) => l.includes("JUJU1;"));
+    if (lines.length === 0) return json(400, { error: "fant ingen Juju-eksport (JUJU1;...)" });
+    if (lines.length > MAX_LINES) return json(413, { error: `maks ${MAX_LINES} spillere per innsending` });
+    const result = { saved: 0, upToDate: 0, rejected: 0, mobs: 0, kills: 0, players: lines.length };
+    let failed = 0;
+    for (const line of lines) {
+      let sub;
+      try {
+        sub = parseExport(line);
+      } catch (e) {
+        if (e instanceof BadData) { result.rejected++; continue; }
+        throw e;
+      }
+      try {
+        const r = await store(env, sub);
+        if (r.status === "saved") result.saved++; else result.upToDate++;
+        result.mobs += sub.mobs.size;
+        for (const m of sub.mobs.values()) result.kills += m.kills;
+      } catch (e) {
+        failed++;
+        result.error = String(e.message || e);
+      }
     }
-    try {
-      const r = await store(env, sub);
-      let kills = 0;
-      for (const m of sub.mobs.values()) kills += m.kills;
-      return json(200, { ...r, mobs: sub.mobs.size, kills });
-    } catch (e) {
-      return json(502, { error: "kunne ikke lagre akkurat nå", detail: String(e.message || e) });
+    if (failed && !result.saved && !result.upToDate) {
+      return json(502, { error: "kunne ikke lagre akkurat nå", detail: result.error });
     }
+    if (result.rejected === lines.length) return json(400, { error: "ingen gyldige data", ...result });
+    result.status = result.saved ? "saved" : "up-to-date";
+    return json(200, result);
   },
 };

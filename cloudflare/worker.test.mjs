@@ -82,5 +82,21 @@ test("rate limit", async () => {
 
 test("too large -> 413", async () => {
   fakeGitHub();
-  assert.equal((await post("x".repeat(600 * 1024))).status, 413);
+  assert.equal((await post("x".repeat(5 * 1024 * 1024))).status, 413);
+});
+
+test("batch: several players in one request", async () => {
+  const gh = fakeGitHub();
+  const body = ["JUJU1;aaaa;10;38:5:2589=1", "JUJU1;bbbb;20;30:7:", "garbage JUJU1;zz;1;", "JUJU1;cccc;30;61:3:2589=1"].join("\n");
+  const r = await post(body);
+  assert.equal(r.status, 200);
+  const j = await r.json();
+  assert.equal(j.saved, 3);
+  assert.equal(j.rejected, 1);
+  assert.equal(j.kills, 15);
+  assert.ok(gh.files.has("data/submissions/bbbb.txt"));
+  const again = await (await post(body)).json();
+  assert.equal(again.upToDate, 3, "same data again: nothing rewritten");
+  const many = Array.from({ length: 51 }, (_, i) => `JUJU1;${(4096 + i).toString(16)};1;38:1:`).join("\n");
+  assert.equal((await post(many)).status, 413);
 });

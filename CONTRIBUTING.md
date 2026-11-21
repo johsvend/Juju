@@ -13,6 +13,29 @@
 | `tools/` | Python-verktøy. Bare standardbiblioteket, unntatt `extract_drops.py`, som trenger `cbor2`. |
 | `tests/` | `python -m unittest discover -s tests -v` |
 | `.github/` | Innsendingsskjema og automatikk (GitHub Actions). |
+| `Juju/Sync.lua` | Deling inne i spillet (addon-meldinger til guild, gruppe og Juju-kanalen). |
+| `uploader/` | Juju-opplasteren. **Bare hos vedlikeholderen.** Ikke med i Juju.zip. |
+| `cloudflare/` | Juju-mottakeren (Cloudflare Worker) som opplasteren sender til. |
+
+## Hvordan data når GitHub
+
+```
+spillere ──(i spillet)──► din Juju ──(utlogging/reload)──► SavedVariables
+   ──► Juju-opplasteren (din PC) ──► Cloudflare ──► data/submissions/<id>.txt ──► robot ──► SharedData.lua
+```
+
+1. **Alle Juju-spillere deler med hverandre i spillet** (`Sync.lua`). Din Juju tar vare på det den mottar (`JujuDB.peers`).
+2. **Ved hver utlogging og `/reload`** skriver Juju alle poster som ikke allerede ligger i fellesdataene til `JujuDB.uploads`.
+3. **Opplasteren på din PC** sender dem til mottakeren, med maks 50 spillere per forespørsel, og henter nyeste `SharedData.lua`. Hos deg er addon-mappa en junction til repoet, så der hopper opplasteren over hentingen, og fellesdataene kommer i stedet med `git pull`.
+4. **Mottakeren lagrer én fil per spiller**, der nyeste vinner, og roboten slår sammen.
+
+Jo mer du er pålogget i guild, gruppe og Juju-kanalen, jo mer samler din Juju inn.
+
+### Installere opplasteren (bare deg, én gang)
+
+1. Sett opp mottakeren først (se `cloudflare/README.md`), og sett adressen i `uploader/config.json`.
+2. Dobbeltklikk `uploader/installer.cmd`. Det lager en planlagt oppgave som kjører hvert 5. minutt.
+3. Loggen ligger i `%LOCALAPPDATA%\JujuUploader\log.txt`. Fjern opplasteren med `uploader/avinstaller.cmd`.
 
 ## Legge inn data mottatt i Discord
 

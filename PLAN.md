@@ -2,7 +2,7 @@
 
 **Mål:** Juju skal bli bedre jo flere som bruker den. Hver spiller teller hva mobs dropper. Tellingene deles og slås sammen, så «?» erstattes av ekte drop-% fra WoW Forever.
 
-**Status (v1.2, 21.11.2026):**
+**Status (v1.3, 21.11.2026):**
 
 | Del | Status |
 |---|---|
@@ -12,8 +12,8 @@
 | 2.2 Ingen dobbelttelling i gruppe | ⏳ Ikke gjort. To spillere som looter samme lik teller det begge. |
 | 2.3 Hvor sikkert tallet er (kills og spillere) | ✅ Vises i listen og tooltip. Fargekoding etter sikkerhet gjenstår. |
 | 2.4 Ingen «?» | ✅ Skjules til det finnes minst 10 kills. |
-| 3 Deling inne i spillet | ⏳ Ikke startet. |
-| Automatisk deling: Juju → opplaster → Cloudflare → GitHub → fellesdata tilbake | ✅ Bygget og testet lokalt (v1.2). ⏳ Cloudflare-mottakeren må settes opp (se `cloudflare/README.md`). |
+| 3 Deling inne i spillet | ✅ v1.3: guild, gruppe/raid og Juju-kanalen. Data spres videre, med grenser og sjekk. Ikke testet i ekte spill ennå. |
+| Innsamling til GitHub: din Juju → opplaster (bare hos deg) → Cloudflare → GitHub | ✅ Bygget og testet lokalt. ⏳ Cloudflare-mottakeren må settes opp (se `cloudflare/README.md`). |
 | 4 Innsending (GitHub-skjema, robot, Discord-veiledning) og sammenslåing | ✅ Ligger på GitHub (johsvend/Juju), og jobbene kjører. |
 | 5 README, endringslogg | ✅ |
 | 5 CurseForge/Wago | ⏸ Utsatt etter ønske. |

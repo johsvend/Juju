@@ -58,6 +58,7 @@ local function countKill(guid, npcID)
     forgetOld()
     local m = mob(npcID)
     m.kills = m.kills + 1
+    J.db.ownDirty = true                 -- your record for sharing gets a new version
     -- keep a name for mobs not in the shipped data
     if not J.NPCS[npcID] and not m.name and UnitGUID("target") == guid then
         local n = UnitName("target")
@@ -104,6 +105,7 @@ function L:LOOT_OPENED()
                         seen[itemID] = true
                         local m = mob(npcID)
                         m.items[itemID] = (m.items[itemID] or 0) + 1
+                        J.db.ownDirty = true
                         if not J.ITEMS[itemID] then
                             local name = link:match("%[(.-)%]")
                             if name then J.db.itemNames[itemID] = name end

@@ -2,7 +2,7 @@
 
 WoW Forever-addon (klient 1.60.x, `## Interface: 16001`) som viser **hva mobben du har som target dropper, med drop-%**, og lar deg **søke på et item for å finne den beste mobben å farme**.
 
-Drop-% blir bedre jo flere som deler data: hver spiller teller hva mobs dropper, og tellingene slås sammen til felles tall for alle.
+Drop-% blir bedre jo flere som bruker Juju. Hver spiller teller hva mobs dropper, og Juju deler tellingene **automatisk inne i spillet** med andre Juju-spillere. Du trenger ikke installere noe annet enn addonen.
 
 *English summary at the bottom.*
 
@@ -13,17 +13,17 @@ Drop-% blir bedre jo flere som deler data: hver spiller teller hva mobs dropper,
 - **Drop-liste ved target:** klikk på en mob, så vises det den dropper, med høyest % øverst. Listen skjules når du angriper og kommer tilbake når kampen er over. Vinduet kan dras dit du vil.
 - **To kilder for %:**
   - hvit % kommer fra Wowhead (via QuestieDB)
-  - grønn % kommer fra Juju: dine egne kills pluss det andre spillere har delt
+  - grønn % kommer fra Juju: dine egne kills pluss det andre Juju-spillere har delt
   - drops uten kjent % skjules til det finnes minst 10 kills av mobben
-- **Søk:** `/juju linen` eller klikk på Juju-knappen ved minimap. Du får opp alle mobs som dropper itemet, med level, sone og %.
-- **Deling:** `/juju eksport` lager en tekst du kan sende inn (se under).
+- **Søk:** `/juju linen`, eller klikk på Juju-knappen ved minimap. Du får opp alle mobs som dropper itemet, med level, sone og %.
+- **Automatisk deling:** hver kill og hva den droppet deles med Juju-spillere i guilden din, gruppen din og Juju-kanalen.
 
 ## Installasjon
 
 1. Last ned `Juju.zip`: GitHub → *Actions* → siste «Bygg»-kjøring → *Artifacts*.
 2. Pakk ut slik at du får `World of Warcraft/_forever_/Interface/AddOns/Juju/Juju.toc`.
-3. Dobbeltklikk `Juju/Opplaster/installer.cmd` én gang, så deles dropsene dine automatisk og du får fellesdata fra alle (se under). Dette kan hoppes over.
-4. Start spillet og sjekk at Juju er huket av i AddOns-listen.
+3. Start spillet og sjekk at Juju er huket av i AddOns-listen.
+4. Valgfritt, men anbefalt: åpne Juju-søket og klikk **«Bli med i Juju-kanalen»**. Da deler du med alle Juju-spillere på realmen, ikke bare guild og gruppe. Kanalen vises ikke i chatten.
 
 ## Kommandoer
 
@@ -31,62 +31,55 @@ Drop-% blir bedre jo flere som deler data: hver spiller teller hva mobs dropper,
 |---|---|
 | `/juju` | Åpne søket |
 | `/juju <navn>` | Søk direkte, for eksempel `/juju runecloth` |
-| `/juju eksport` | Vis dataene dine som tekst du kan sende inn |
-| `/juju deling` | Skru automatisk deling via Juju-opplasteren av og på |
+| `/juju kanal` | Bli med i eller forlat Juju-kanalen |
+| `/juju sync` | Vis status for delingen: hvor mange spillere og hvor det sendes |
+| `/juju deling` | Skru delingen av og på |
+| `/juju eksport` | Vis dataene dine som tekst, for manuell innsending |
 | `/juju target` | Skru drop-listen ved target av og på |
 | `/juju flytt` | Sett drop-listen tilbake under target-rammen |
 | `/juju knapp` | Skjul eller vis minimap-knappen |
 
-## Hjelp til med drop-% 🙌
-
-Jo flere som deler, jo sikrere blir prosentene. Spesielt for sjeldne drops, som trenger hundrevis av kills.
-
-**Automatisk med Juju-opplasteren (anbefalt):**
-Opplasteren følger med i Juju-mappa (`Juju/Opplaster`).
-1. Dobbeltklikk `Interface/AddOns/Juju/Opplaster/installer.cmd` én gang. Du trenger ikke administrator-rettigheter.
-2. Ferdig. Hver kill og hva den droppet blir registrert av Juju. Når du logger ut eller skriver `/reload` (det er da WoW lagrer data), sender opplasteren det som er nytt. Samtidig henter den de nyeste fellesdataene fra alle spillere, og de vises i spillet etter neste `/reload`.
+## Slik blir drop-% bedre for alle
 
 ```
-WoW (Juju) ──► SavedVariables ──► Juju-opplaster ──► Cloudflare ──► GitHub ──► fellesdata ──► alle
+deg ──┐                                            ┌──► nye spillere
+guild ┼─► Juju deler usynlig i spillet ─► vedlikeholderens Juju ─► GitHub (fellesdata) ─► ny versjon
+gruppe┘   (og videre fra spiller til spiller)
 ```
 
-Skru av deling i spillet med `/juju deling`. Fjern opplasteren med `avinstaller.cmd`.
+1. **Du dreper og looter.** Juju teller hver kill og hva den droppet.
+2. **Juju deler med Juju-spillere** i guild, gruppe og Juju-kanalen. Det skjer med usynlige addon-meldinger, sakte og aldri i kamp. Dataene sprer seg videre fra spiller til spiller, så de når også dem du aldri treffer.
+3. **Vedlikeholderen samler alt** og legger det inn i fellesdataene på GitHub. Det kommer med i neste versjon av Juju, så også nye spillere får tallene fra dag én.
 
-**Manuelt via GitHub:**
-1. Skriv `/juju eksport` i spillet, eller klikk «Del mine data» i søkevinduet.
-2. Trykk **Ctrl+C** for å kopiere teksten. Den starter med `JUJU1;`.
-3. Gå til *Issues → New issue → «Send inn Juju-data»*, lim inn teksten og send.
-4. En robot sjekker dataene, legger dem inn og svarer i issuet.
+Delingen bruker bare det spillet selv tillater. Sier spillet nei til en vei, for eksempel guild-meldinger på en realm, slutter Juju å prøve den veien for resten av økten.
 
-Du kan også legge ved filen `WTF/Account/<konto>/SavedVariables/Juju.lua`. Gi den nytt navn til `Juju.txt`, eller pakk den i en `.zip`, for GitHub godtar ikke `.lua`-filer som vedlegg.
-
-**Via Discord:** lim inn teksten fra `/juju eksport`, eller legg ved `Juju.lua`, i Juju-kanalen. Vedlikeholderen legger den inn.
-
-Send gjerne inn på nytt etter en tids spilling. Den nyeste innsendingen din erstatter den forrige, og ingenting telles dobbelt.
+**Manuell innsending** (for eksempel hvis du sjelden er pålogget samtidig med andre):
+`/juju eksport` → **Ctrl+C** → GitHub *Issues → New issue → «Send inn Juju-data»* → lim inn. Eller lim inn i Juju-kanalen på Discord.
 
 ### Personvern
 
-Bare tre ting deles: **mob-ID, antall kills og hvor mange ganger hvert item droppet**. Ingen karakternavn, ingen posisjon og ingen kontoinformasjon. Juju lager en tilfeldig, anonym ID per installasjon. Den brukes bare til at den nyeste innsendingen din erstatter den gamle, og til at dine egne kills ikke telles to ganger i spillet.
+Bare tre ting deles: **mob-ID, antall kills og hvor mange ganger hvert item droppet**. Ingen posisjon og ingen kontoinformasjon. Juju lager en tilfeldig, anonym ID per installasjon, slik at nyeste data erstatter eldre og ingenting telles dobbelt. I spillet ser mottakeren navnet på karakteren som sendte meldingen, slik det alltid er med addon-meldinger, men navnet lagres ikke i fellesdataene.
 
 ### Hvordan tallene holdes ærlige
 
-- Bare den nyeste innsendingen per spiller teller, og én GitHub-konto teller som én spiller.
-- Urimelige tall forkastes, for eksempel flere drops enn kills. Hver spiller kan påvirke hver mob med maks 5000 kills.
-- Innsendte filer **kjøres aldri**. De leses av en egen parser, og bare tallene lagres.
+- **Alt sjekkes etter de samme reglene overalt:** inne i spillet, hos mottakeren og på GitHub. Urimelige tall forkastes, for eksempel flere drops enn kills, og hver spiller kan påvirke hver mob med maks 5000 kills.
+- **Juju tar bare imot data den selv har bedt om.** Én spiller kan føre inn maks 30 nye spillere per dag, og maks 1000 lagres.
+- **Bare den nyeste versjonen per spiller teller.**
+- **Innsendt data kjøres aldri.** Den leses som tall.
 
-## For utviklere
+## For vedlikeholdere og utviklere
 
-Se [CONTRIBUTING.md](CONTRIBUTING.md): hvordan data legges inn, sammenslåing, nytt uttrekk fra QuestieDB og tester.
+Se [CONTRIBUTING.md](CONTRIBUTING.md): opplasteren (bare hos vedlikeholderen), Cloudflare-mottakeren, sammenslåing, nytt uttrekk fra QuestieDB og tester.
 
 ## Lisens og kreditering
 
 Juju er lisensiert under **GNU GPL v3.0** (se [LICENSE](LICENSE)).
 
 - **Drop-data:** hentet fra [QuestieDB](https://github.com/Questie/Questie) (GPL-3.0). Drop-ratene der kommer fra Wowhead.
-- **Fellesdata (`Juju/SharedData.lua`):** delt av Juju-brukere.
+- **Fellesdata (`Juju/SharedData.lua`):** delt av Juju-spillere.
 
 ---
 
 ## English summary
 
-Juju is a WoW Forever addon that shows what your target drops (with drop chances) and lets you search an item to find the best mob to farm it. Drop rates come from Wowhead (via QuestieDB) and from counts shared by Juju players: run `/juju eksport` in game and paste the text into a *"Send inn Juju-data"* issue. A bot validates and merges it automatically. Only mob IDs, kill counts and item counts are shared. Licensed GPL-3.0. Drop data from QuestieDB (GPL-3.0).
+Juju is a WoW Forever addon that shows what your target drops (with drop chances) and lets you search an item to find the best mob to farm it. Drop rates come from Wowhead (via QuestieDB) and from counts Juju players share automatically in-game (invisible addon messages to guild, group and an optional hidden "JujuData" channel). The maintainer's copy forwards everything to GitHub, so every new version ships the community numbers. Players install nothing but the addon. Only mob IDs, kill counts and item counts are shared. Licensed GPL-3.0. Drop data from QuestieDB (GPL-3.0).

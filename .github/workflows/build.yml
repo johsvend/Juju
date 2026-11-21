@@ -1,5 +1,5 @@
-# Tests everything and builds Juju.zip on every change: the addon with the
-# automatic uploader inside (Juju/Opplaster). Unzip into Interface/AddOns.
+# Tests everything and builds Juju.zip (the addon) on every change.
+# Unzip into Interface/AddOns.
 # The zip is attached to the workflow run (Actions -> run -> Artifacts).
 name: Bygg
 
@@ -50,14 +50,12 @@ jobs:
           }
           if ($bad) { exit 1 } else { "Alle PowerShell-filer OK" }
 
-      # ONE download: the uploader lives inside the addon folder (Juju/Opplaster).
-      # WoW only loads what Juju.toc lists, so the extra files are ignored there.
+      # Players get the addon only: sharing happens in-game. The uploader
+      # (uploader/) is the maintainer's tool and is not part of the download.
       - name: Lag Juju.zip
         run: |
           mkdir -p dist
           cp -r Juju dist/Juju
-          mkdir -p dist/Juju/Opplaster
-          cp uploader/* dist/Juju/Opplaster/
           cp LICENSE README.md dist/Juju/
           (cd dist && zip -r -q ../Juju.zip Juju)
           unzip -l Juju.zip

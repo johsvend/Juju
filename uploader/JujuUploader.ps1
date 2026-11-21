@@ -72,31 +72,47 @@ if (Test-Path $stateFile) {
 function Save-State { ($state | ConvertTo-Json) | Set-Content -Path $stateFile -Encoding UTF8 }
 
 # ---------------------------------------------------------------- upload
-$uploadRe = '\["upload"\]\s*=\s*"(JUJU1;([0-9a-fA-F]{4,32});(\d{1,12});[0-9:=,/]*)"'
+# every "JUJU1;id;serial;..." string Juju wrote: your own record plus what it
+# received from other players in-game (["uploads"] list)
+$recordRe = '"(JUJU1;([0-9a-fA-F]{4,32});(\d{1,12});[0-9:=,/]*)"'
+$batchSize = 50
 
 function Send-Uploads($root) {
     $files = Get-ChildItem -Path (Join-Path $root 'WTF\Account') -Filter 'Juju.lua' -Recurse -ErrorAction SilentlyContinue |
              Where-Object { $_.DirectoryName -like '*\SavedVariables' }
+    # newest record per player id over all accounts/files, not sent before
+    $pending = @{}
     foreach ($f in $files) {
         $text = [IO.File]::ReadAllText($f.FullName)
-        $m = [regex]::Match($text, $uploadRe)
-        if (-not $m.Success) { continue }
-        $payload, $id, $serial = $m.Groups[1].Value, $m.Groups[2].Value.ToLower(), [long]$m.Groups[3].Value
-        if ($state.ContainsKey($id) -and [long]$state[$id] -ge $serial) { continue }   # already sent
+        foreach ($m in [regex]::Matches($text, $recordRe)) {
+            $id, $serial = $m.Groups[2].Value.ToLower(), [long]$m.Groups[3].Value
+            if ($state.ContainsKey($id) -and [long]$state[$id] -ge $serial) { continue }   # already sent
+            if ($pending.ContainsKey($id) -and $pending[$id].serial -ge $serial) { continue }
+            $pending[$id] = @{ serial = $serial; line = $m.Groups[1].Value }
+        }
+    }
+    if ($pending.Count -eq 0) { return }
+    $ids = @($pending.Keys)
+    for ($i = 0; $i -lt $ids.Count; $i += $batchSize) {
+        $chunk = $ids[$i..([Math]::Min($i + $batchSize, $ids.Count) - 1)]
+        $body = ($chunk | ForEach-Object { $pending[$_].line }) -join "`n"
         try {
-            $r = Invoke-RestMethod -Uri $config.endpoint -Method Post -Body $payload `
-                                   -ContentType 'text/plain; charset=utf-8' -TimeoutSec 30
-            $state[$id] = $serial
+            $r = Invoke-RestMethod -Uri $config.endpoint -Method Post -Body $body `
+                                   -ContentType 'text/plain; charset=utf-8' -TimeoutSec 60
+            foreach ($id in $chunk) { $state[$id] = $pending[$id].serial }
             Save-State
-            Log ("Sendt: {0} mobs, {1} kills ({2})" -f $r.mobs, $r.kills, $r.status)
+            Log ("Sendt: {0} spillere ({1} nye, {2} uendret, {3} avvist), {4} kills" -f `
+                 $chunk.Count, $r.saved, $r.upToDate, $r.rejected, $r.kills)
         } catch {
             $code = $null
             try { $code = [int]$_.Exception.Response.StatusCode } catch {}
             if ($code -eq 400) {                       # data the receiver will never accept
-                $state[$id] = $serial; Save-State
+                foreach ($id in $chunk) { $state[$id] = $pending[$id].serial }
+                Save-State
                 Log "Avvist av mottakeren (ugyldige data): $($_.Exception.Message)"
             } else {
                 Log "Kunne ikke sende nå (prøver igjen senere): $($_.Exception.Message)"
+                return
             }
         }
     }

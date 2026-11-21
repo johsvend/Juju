@@ -153,6 +153,11 @@ function S:Update()
     end
     for i = n + 1, #rows do rows[i]:Hide(); rows[i].item, rows[i].npc, rows[i].e = nil, nil, nil end
     child:SetHeight(math.max(10, n * ROW))
+    if S.chan and J.Sync then
+        S.chan:SetText(J.Sync:InChannel() and "Forlat Juju-kanalen" or "Bli med i Juju-kanalen")
+        local peers = J.Sync:Status()
+        S.syncText:SetText(J.db.autoShare and ("Delt med %d spillere"):format(peers) or "Deling av")
+    end
 end
 
 local function create()
@@ -218,13 +223,25 @@ local function create()
 
     local foot = text(frame, "GameFontDisableSmall")
     foot:SetPoint("BOTTOMLEFT", 18, 12)
-    foot:SetText("% = Wowhead · |cff80ff80grønn|r = Juju (dine + delte kills) · ? = ukjent %")
+    foot:SetText("% = Wowhead · |cff80ff80grønn|r = Juju (dine + delte) · ? = ukjent")
 
-    local export = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    export:SetSize(120, 20)
-    export:SetPoint("LEFT", back, "RIGHT", 6, 0)
-    export:SetText("Del mine data")
-    export:SetScript("OnClick", function() S:ShowExport() end)
+    -- in-game sharing: status + Juju channel (joining needs a click)
+    S.chan = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    S.chan:SetSize(150, 20)
+    S.chan:SetPoint("LEFT", back, "RIGHT", 6, 0)
+    S.chan:SetScript("OnClick", function()
+        if J.Sync:InChannel() then J.Sync:LeaveChannel() else J.Sync:JoinChannel() end
+        C_Timer.After(2.5, function() S:Update() end)
+    end)
+    S.chan:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Juju-kanalen")
+        GameTooltip:AddLine("Deler drop-tellinger usynlig med alle Juju-spillere på realmen, ikke bare guild og gruppe. Kanalen vises ikke i chatten.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    S.chan:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    S.syncText = text(frame, "GameFontDisableSmall")
+    S.syncText:SetPoint("BOTTOMRIGHT", -18, 12)
 
     -- shift-click an item into the box
     if type(ChatEdit_InsertLink) == "function" then

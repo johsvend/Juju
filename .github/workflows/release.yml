@@ -44,13 +44,13 @@ jobs:
           echo "GAMEVER=$gamever" >> "$GITHUB_ENV"
           echo "Versjon $version for spillversjon $gamever"; cat notes.md
 
-      - name: Lag Juju.zip
+      - name: Lag Juju-versjon.zip
         run: |
           mkdir -p dist
           cp -r Juju dist/Juju
           cp LICENSE README.md dist/Juju/
-          (cd dist && zip -r -q ../Juju.zip Juju)
-          unzip -l Juju.zip
+          (cd dist && zip -r -q "../Juju-$VERSION.zip" Juju)
+          unzip -l "Juju-$VERSION.zip"
 
       - name: Last opp til CurseForge
         env:
@@ -79,6 +79,6 @@ jobs:
               gameVersions: [$gid], releaseType: "release"}' > metadata.json
           curl -fsS -H "X-Api-Token: $CF_API_KEY" \
             -F "metadata=<metadata.json;type=application/json" \
-            -F "file=@Juju.zip;type=application/zip" \
+            -F "file=@Juju-$VERSION.zip;type=application/zip" \
             "$api/projects/$CF_PROJECT_ID/upload-file"
           echo; echo "Juju $VERSION er lastet opp til CurseForge"

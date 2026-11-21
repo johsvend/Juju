@@ -1,5 +1,7 @@
-# Tests the data tools and builds an installable Juju.zip on every change.
-# The zip is attached to the workflow run (Actions -> run -> Artifacts).
+# Tests everything and builds two installable zips on every change:
+#   Juju.zip            – the addon (unzip into Interface/AddOns)
+#   Juju-opplaster.zip  – the automatic uploader for Windows
+# The zips are attached to the workflow run (Actions -> run -> Artifacts).
 name: Bygg
 
 on:
@@ -21,8 +23,16 @@ jobs:
         with:
           python-version: "3.12"
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: Test dataverktøyene
         run: python -m unittest discover -s tests -v
+
+      - name: Test Juju-mottakeren (Cloudflare Worker)
+        working-directory: cloudflare
+        run: node --test
 
       - name: Sjekk Lua-syntaks
         run: |
@@ -30,10 +40,29 @@ jobs:
           for f in Juju/*.lua; do luac5.1 -p "$f" || exit 1; done
           echo "Alle Lua-filer OK"
 
-      - name: Lag Juju.zip
-        run: zip -r -q Juju.zip Juju LICENSE README.md
+      - name: Sjekk PowerShell-syntaks
+        shell: pwsh
+        run: |
+          $bad = 0
+          foreach ($f in Get-ChildItem uploader/*.ps1) {
+            $err = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$null, [ref]$err)
+            if ($err.Count) { $bad++; $err | ForEach-Object { Write-Error "$($f.Name): $_" } }
+          }
+          if ($bad) { exit 1 } else { "Alle PowerShell-filer OK" }
+
+      - name: Lag zip-filer
+        run: |
+          zip -r -q Juju.zip Juju LICENSE README.md
+          mkdir -p dist/Juju-opplaster && cp uploader/* LICENSE dist/Juju-opplaster/
+          (cd dist && zip -r -q ../Juju-opplaster.zip Juju-opplaster)
 
       - uses: actions/upload-artifact@v4
         with:
           name: Juju
           path: Juju.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Juju-opplaster
+          path: Juju-opplaster.zip

@@ -1,0 +1,17 @@
+# Juju-mottaker – Cloudflare Worker. Oppsett: se cloudflare/README.md
+name = "juju-mottaker"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+REPO = "johsvend/Juju"
+BRANCH = "main"
+
+# max 6 innsendinger per minutt per IP-adresse
+[[ratelimits]]
+name = "LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 6
+  period = 60

@@ -4,7 +4,7 @@
 ## Author: Juju
 ## X-License: GPL-3.0
 ## X-Credits: Drop data from QuestieDB (GPL-3.0), Wowhead rates via QuestieDB
-## Version: 1.1.0
+## Version: 1.2.0
 ## SavedVariables: JujuDB
 ## IconTexture: Interface\Icons\INV_Misc_Bag_10
 

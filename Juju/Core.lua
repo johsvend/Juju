@@ -280,7 +280,7 @@ end
 -- Export: your counts as one line of text to send in (GitHub / Discord)
 -- Format: JUJU1;<id>;<serial>;<npc>:<kills>:<item>=<n>,<item>=<n>/<npc>:...
 -- A snapshot is kept, so once SharedData includes this export your own
--- counts aren't added twice (see J.Stats). Only the last 3 are kept.
+-- counts aren't added twice (see J.Stats). The 10 newest are kept.
 ----------------------------------------------------------------------
 function J.Export()
     local serial = time()
@@ -313,7 +313,7 @@ function J.Export()
         if s ~= keep then serials[#serials + 1] = s end
     end
     table.sort(serials)
-    for i = 1, #serials - 3 do J.db.exports[serials[i]] = nil end
+    for i = 1, #serials - 10 do J.db.exports[serials[i]] = nil end
     return ("JUJU1;%s;%d;%s"):format(J.db.id, serial, table.concat(parts, "/")), #parts
 end
 
@@ -345,12 +345,33 @@ local function defaults(db)
         db.id = table.concat(t)
     end
     db.exports = type(db.exports) == "table" and db.exports or {}
+    if db.autoShare == nil then db.autoShare = true end   -- Juju-opplasteren sends db.upload
+end
+
+-- Automatic sharing: on every logout and /reload (the only times WoW writes
+-- SavedVariables to disk) the current counts are stored as export text in
+-- JujuDB.upload. The Juju uploader on the PC sends it on. Skipped when
+-- nothing changed since the last one, so snapshots don't pile up.
+local function totalKills()
+    local n = 0
+    for _, m in pairs(J.db.mobs) do n = n + (m.kills or 0) end
+    return n
+end
+
+function J.PrepareUpload()
+    if not J.db.autoShare then J.db.upload = nil; return end
+    local total = totalKills()
+    if total == 0 then return end
+    if J.db.upload and J.db.uploadKills == total then return end
+    local txt, n = J.Export()
+    if n > 0 then J.db.upload, J.db.uploadKills = txt, total end
 end
 
 local boot = CreateFrame("Frame")
 boot:RegisterEvent("ADDON_LOADED")
 boot:RegisterEvent("PLAYER_LOGIN")
 boot:RegisterEvent("GET_ITEM_INFO_RECEIVED")
+boot:RegisterEvent("PLAYER_LOGOUT")          -- also fires on /reload: prepare the upload
 -- diagnosis: which protected function did the game stop, and in what situation
 boot:RegisterEvent("ADDON_ACTION_BLOCKED")
 boot:RegisterEvent("ADDON_ACTION_FORBIDDEN")
@@ -364,6 +385,10 @@ boot:SetScript("OnEvent", function(_, event, arg1, arg2)
                 tostring(LootFrame and LootFrame:IsShown() and true or false)))
             if debugstack then print(debugstack(2, 6, 0)) end
         end
+        return
+    end
+    if event == "PLAYER_LOGOUT" then
+        if J.db then pcall(J.PrepareUpload) end
         return
     end
     if event == "ADDON_LOADED" and arg1 == ADDON then
@@ -400,6 +425,10 @@ SlashCmdList.JUJU = function(msg)
     elseif msg == "flytt" or msg == "reset" then
         J.db.target.pos = nil
         J.Print("drop-listen er satt tilbake under target-rammen (gjelder etter /reload).")
+    elseif msg == "deling" then
+        J.db.autoShare = not J.db.autoShare
+        if not J.db.autoShare then J.db.upload = nil end
+        J.Print("automatisk deling (via Juju-opplasteren): " .. (J.db.autoShare and "på" or "av"))
     elseif msg == "eksport" or msg == "export" then
         J.Search:ShowExport()
     elseif msg == "knapp" then

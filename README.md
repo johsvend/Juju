@@ -31,6 +31,7 @@ Drop-% blir bedre jo flere som deler data: hver spiller teller hva mobs dropper,
 | `/juju` | Åpne søket |
 | `/juju <navn>` | Søk direkte, for eksempel `/juju runecloth` |
 | `/juju eksport` | Vis dataene dine som tekst du kan sende inn |
+| `/juju deling` | Skru automatisk deling via Juju-opplasteren av og på |
 | `/juju target` | Skru drop-listen ved target av og på |
 | `/juju flytt` | Sett drop-listen tilbake under target-rammen |
 | `/juju knapp` | Skjul eller vis minimap-knappen |
@@ -39,7 +40,18 @@ Drop-% blir bedre jo flere som deler data: hver spiller teller hva mobs dropper,
 
 Jo flere som deler, jo sikrere blir prosentene. Spesielt for sjeldne drops, som trenger hundrevis av kills.
 
-**Via GitHub (anbefalt):**
+**Automatisk med Juju-opplasteren (anbefalt):**
+1. Last ned `Juju-opplaster.zip`: GitHub → *Actions* → siste «Bygg» → *Artifacts*.
+2. Pakk ut og dobbeltklikk `installer.cmd`. Du trenger ikke administrator-rettigheter.
+3. Ferdig. Hver kill og hva den droppet blir registrert av Juju. Når du logger ut eller skriver `/reload` (det er da WoW lagrer data), sender opplasteren det som er nytt. Samtidig henter den de nyeste fellesdataene fra alle spillere, og de vises i spillet etter neste `/reload`.
+
+```
+WoW (Juju) ──► SavedVariables ──► Juju-opplaster ──► Cloudflare ──► GitHub ──► fellesdata ──► alle
+```
+
+Skru av deling i spillet med `/juju deling`. Fjern opplasteren med `avinstaller.cmd`.
+
+**Manuelt via GitHub:**
 1. Skriv `/juju eksport` i spillet, eller klikk «Del mine data» i søkevinduet.
 2. Trykk **Ctrl+C** for å kopiere teksten. Den starter med `JUJU1;`.
 3. Gå til *Issues → New issue → «Send inn Juju-data»*, lim inn teksten og send.

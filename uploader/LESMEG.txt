@@ -1,0 +1,31 @@
+JUJU-OPPLASTER
+=============
+
+Sender Juju-dataene dine automatisk (hver kill og hva den droppet), og henter
+de nyeste fellesdataene fra alle spillere inn i Juju. Da blir drop-% riktigere
+for alle.
+
+INSTALLERE
+  Dobbeltklikk installer.cmd. Du trenger ikke administrator-rettigheter.
+  Den kjører i bakgrunnen hvert 5. minutt og når du logger inn i Windows.
+
+SLIK VIRKER DET
+  - WoW lagrer Juju-dataene når du logger ut eller skriver /reload.
+  - Opplasteren sender da det som er nytt, og henter nye fellesdata.
+  - Nye fellesdata vises i spillet etter neste /reload.
+
+HVA SOM SENDES
+  Bare mob-ID, antall kills og hvor mange ganger hvert item droppet.
+  Ingen navn, ingen posisjon, ingen kontoinformasjon.
+  Skru av deling inne i spillet med:  /juju deling
+
+FJERNE
+  Dobbeltklikk avinstaller.cmd.
+
+LOGG
+  %LOCALAPPDATA%\JujuUploader\log.txt
+
+FINNER DEN IKKE WOW?
+  Åpne %LOCALAPPDATA%\JujuUploader\config.json og skriv mappa der WoW ligger
+  i "wowPath", for eksempel:
+  "wowPath": "D:\\Spill\\World of Warcraft"

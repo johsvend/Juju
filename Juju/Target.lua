@@ -71,6 +71,7 @@ local function create()
         self:StopMovingOrSizing()
         local point, _, rel, x, y = self:GetPoint(1)
         J.db.target.pos = { point, rel, x, y }
+        if not hoverMob() and not self:IsMouseOver() then self:Hide(); shownGuid = nil end
     end)
     frame:SetScript("OnHide", function(self)
         self:StopMovingOrSizing()
@@ -111,19 +112,29 @@ local function create()
     frame:Hide()
 end
 
--- the mob we should list, or nil
-local function targetMob()
-    if not UnitExists("target") or UnitIsPlayer("target") then return nil end
-    local guid = UnitGUID("target")
-    return J.NpcID(guid)
+-- The list follows the mouse: it shows for the mob under the cursor and goes
+-- away when the cursor leaves it. A short grace keeps it up while you move
+-- the mouse onto the list itself (to drag it or read an item tooltip).
+local UNIT = "mouseover"
+local GRACE = 0.3
+local shownGuid, goneFor, pollAcc = nil, 0, 0
+
+-- the mob under the cursor: npcID, guid (or nil)
+local function hoverMob()
+    if not UnitExists(UNIT) or UnitIsPlayer(UNIT) then return nil end
+    local guid = UnitGUID(UNIT)
+    if not guid or J.Secret(guid) then return nil end
+    local npcID = J.NpcID(guid)
+    if npcID then return npcID, guid end
 end
 
 function T:Refresh()
     if not frame then return end
-    local npcID = targetMob()
+    local npcID, guid = hoverMob()
     if not (J.db.target.enabled and npcID) or InCombatLockdown() or UnitAffectingCombat("player") then
-        frame:Hide(); return
+        frame:Hide(); shownGuid = nil; return
     end
+    shownGuid, goneFor = guid, 0
     local all, kills, players = J.MobDrops(npcID)
     -- no "?" lines: a drop is listed when its chance is known – Wowhead %, or
     -- your own % once you have killed enough of this mob for it to mean something
@@ -134,9 +145,10 @@ function T:Refresh()
         if e.pct or e.own then list[#list + 1] = e else hidden = hidden + 1 end
     end
     if #list == 0 then frame:Hide(); return end     -- nothing known: stay out of the way
+    -- (shownGuid stays set: this mob has nothing to show, don't recompute every poll)
 
     local name, lo, hi, rank = J.Mob(npcID)
-    local uname = UnitName("target")
+    local uname = UnitName(UNIT)
     if uname and not J.Secret(uname) then name = uname end
     local lvl = (lo > 0 and hi > lo) and (lo .. "-" .. hi) or (lo > 0 and tostring(lo) or "")
     local rankText = J.RankText(rank)
@@ -181,17 +193,37 @@ end
 function T:Init()
     create()
     local f = CreateFrame("Frame")
-    f:RegisterEvent("PLAYER_TARGET_CHANGED")
+    f:RegisterEvent("UPDATE_MOUSEOVER_UNIT")     -- the cursor moved onto a unit
     f:RegisterEvent("PLAYER_REGEN_DISABLED")     -- you attack / get attacked: hide
     f:RegisterEvent("PLAYER_ENTER_COMBAT")       -- auto-attack started: hide at once
-    f:RegisterEvent("PLAYER_REGEN_ENABLED")      -- fight over: show again
-    f:RegisterEvent("LOOT_CLOSED")               -- own % changed
+    f:RegisterEvent("PLAYER_REGEN_ENABLED")      -- fight over: show again if still hovering
+    local function refresh()
+        local ok, err = pcall(T.Refresh, T)
+        if not ok and not T.err then T.err = true; J.Print("feil i drop-liste: " .. tostring(err)) end
+    end
     f:SetScript("OnEvent", function(_, event)
         if event == "PLAYER_REGEN_DISABLED" or event == "PLAYER_ENTER_COMBAT" then
-            frame:Hide()
+            frame:Hide(); shownGuid = nil
         else
-            local ok, err = pcall(T.Refresh, T)
-            if not ok and not T.err then T.err = true; J.Print("feil i drop-liste: " .. tostring(err)) end
+            refresh()
+        end
+    end)
+    -- the game has no "mouse left the unit" event: check a few times a second
+    f:SetScript("OnUpdate", function(_, dt)
+        pollAcc = pollAcc + dt
+        if pollAcc < 0.1 then return end
+        local step = pollAcc
+        pollAcc = 0
+        local _, guid = hoverMob()
+        if guid then
+            goneFor = 0
+            if guid ~= shownGuid then refresh() end      -- moved straight onto another mob
+        elseif frame:IsShown() then
+            if frame:IsMouseOver() then goneFor = 0; return end  -- reading/dragging the list
+            goneFor = goneFor + step
+            if goneFor >= GRACE then frame:Hide(); shownGuid = nil end
+        else
+            shownGuid = nil
         end
     end)
 end

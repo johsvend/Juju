@@ -1,5 +1,8 @@
 # Endringslogg
 
+## 1.3.1
+- **Drop-listen følger musa:** den vises når musa er over en mob og forsvinner når musa flyttes vekk, i stedet for å vises ved klikk. Den blir stående litt, og så lenge musa er over listen, slik at den kan dras.
+
 ## 1.3.0
 - **Deling inne i spillet, uten å installere noe:** Juju deler kill- og drop-tellinger usynlig med andre Juju-spillere i guild, gruppe/raid og Juju-kanalen. Dataene sprer seg videre fra spiller til spiller.
 - **Juju-kanalen:** «Bli med i Juju-kanalen» i søkevinduet, eller `/juju kanal`. Kanalen er skjult fra chatten.

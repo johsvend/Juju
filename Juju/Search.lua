@@ -370,7 +370,7 @@ function S:Init()
     mmButton:SetScript("OnClick", function(_, btn)
         if btn == "RightButton" then
             J.db.target.enabled = not J.db.target.enabled
-            J.Print("drop-liste ved target: " .. (J.db.target.enabled and "på" or "av"))
+            J.Print("drop-liste når musa er over en mob: " .. (J.db.target.enabled and "på" or "av"))
             J.Target:Refresh()
         else
             S:Toggle()
@@ -390,7 +390,7 @@ function S:Init()
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
         GameTooltip:AddLine("Juju")
         GameTooltip:AddLine("Venstreklikk: søk etter item → beste mobs", 1, 1, 1)
-        GameTooltip:AddLine("Høyreklikk: drop-liste ved target på/av", 1, 1, 1)
+        GameTooltip:AddLine("Høyreklikk: drop-liste (mus over mob) på/av", 1, 1, 1)
         GameTooltip:AddLine("Dra: flytt knappen", 0.7, 0.7, 0.7)
         GameTooltip:Show()
     end)

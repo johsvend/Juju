@@ -531,7 +531,7 @@ SlashCmdList.JUJU = function(msg)
     msg = (msg or ""):lower():match("^%s*(.-)%s*$")
     if msg == "target" or msg == "liste" then
         J.db.target.enabled = not J.db.target.enabled
-        J.Print("drop-liste ved target: " .. (J.db.target.enabled and "på" or "av"))
+        J.Print("drop-liste når musa er over en mob: " .. (J.db.target.enabled and "på" or "av"))
         J.Target:Refresh()
     elseif msg == "flytt" or msg == "reset" then
         J.db.target.pos = nil

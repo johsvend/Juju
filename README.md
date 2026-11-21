@@ -1,6 +1,6 @@
 # Juju
 
-WoW Forever-addon (klient 1.60.x, `## Interface: 16001`) som viser **hva mobben du har som target dropper, med drop-%**, og lar deg **søke på et item for å finne den beste mobben å farme**.
+WoW Forever-addon (klient 1.60.x, `## Interface: 16001`) som viser **hva mobben under musa dropper, med drop-%**, og lar deg **søke på et item for å finne den beste mobben å farme**.
 
 Drop-% blir bedre jo flere som bruker Juju. Hver spiller teller hva mobs dropper, og Juju deler tellingene **automatisk inne i spillet** med andre Juju-spillere. Du trenger ikke installere noe annet enn addonen.
 
@@ -10,7 +10,7 @@ Drop-% blir bedre jo flere som bruker Juju. Hver spiller teller hva mobs dropper
 
 ## Funksjoner
 
-- **Drop-liste ved target:** klikk på en mob, så vises det den dropper, med høyest % øverst. Listen skjules når du angriper og kommer tilbake når kampen er over. Vinduet kan dras dit du vil.
+- **Drop-liste når musa er over en mob:** hold musa over en mob, så vises det den dropper, med høyest % øverst. Listen forsvinner når musa flyttes vekk, og skjules når du angriper. Den blir stående mens musa er over selve listen, så du kan dra den dit du vil.
 - **To kilder for %:**
   - hvit % kommer fra Wowhead (via QuestieDB)
   - grønn % kommer fra Juju: dine egne kills pluss det andre Juju-spillere har delt
@@ -35,8 +35,8 @@ Drop-% blir bedre jo flere som bruker Juju. Hver spiller teller hva mobs dropper
 | `/juju sync` | Vis status for delingen: hvor mange spillere og hvor det sendes |
 | `/juju deling` | Skru delingen av og på |
 | `/juju eksport` | Vis dataene dine som tekst, for manuell innsending |
-| `/juju target` | Skru drop-listen ved target av og på |
-| `/juju flytt` | Sett drop-listen tilbake under target-rammen |
+| `/juju target` | Skru drop-listen (mus over mob) av og på |
+| `/juju flytt` | Sett drop-listen tilbake til standardplassen |
 | `/juju knapp` | Skjul eller vis minimap-knappen |
 
 ## Slik blir drop-% bedre for alle
@@ -82,4 +82,4 @@ Juju er lisensiert under **GNU GPL v3.0** (se [LICENSE](LICENSE)).
 
 ## English summary
 
-Juju is a WoW Forever addon that shows what your target drops (with drop chances) and lets you search an item to find the best mob to farm it. Drop rates come from Wowhead (via QuestieDB) and from counts Juju players share automatically in-game (invisible addon messages to guild, group and an optional hidden "JujuData" channel). The maintainer's copy forwards everything to GitHub, so every new version ships the community numbers. Players install nothing but the addon. Only mob IDs, kill counts and item counts are shared. Licensed GPL-3.0. Drop data from QuestieDB (GPL-3.0).
+Juju is a WoW Forever addon that shows what the mob under your mouse drops (with drop chances) and lets you search an item to find the best mob to farm it. Drop rates come from Wowhead (via QuestieDB) and from counts Juju players share automatically in-game (invisible addon messages to guild, group and an optional hidden "JujuData" channel). The maintainer's copy forwards everything to GitHub, so every new version ships the community numbers. Players install nothing but the addon. Only mob IDs, kill counts and item counts are shared. Licensed GPL-3.0. Drop data from QuestieDB (GPL-3.0).

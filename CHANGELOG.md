@@ -1,5 +1,8 @@
 # Endringslogg
 
+## 1.4.2
+- **Jevne tall uten kill-grense:** vist % = (Wowhead-% veid som 50 kills + Juju-drops) / (50 + Juju-kills). Hver kill fra en hvilken som helst Juju-spiller flytter tallet litt mot det spillerne faktisk ser, uten brå hopp. Items uten Wowhead-% vises fra første drop, dempet med 5 kills.
+
 ## 1.4.1
 - **Ett gult tall per drop:** Juju-% vises i stedet for Wowhead-% når mobben har minst 10 kills og itemet har droppet. Ellers vises Wowhead-%. Tooltipen viser begge og hvilken som vises. Listene sorteres etter tallet som vises.
 - **«(Skinning)» etter items fra skinning**, for eksempel leather, hides og scales. Juju lærer flere selv når du skinner, og skinning-loot telles fortsatt ikke som drop.

@@ -9,8 +9,13 @@
 local ADDON, J = ...
 _G.Juju = J
 J.PREFIX = "|cff7fd4ffJuju|r"
--- own % is shown (and replaces "?") from this many kills of a mob
-J.MIN_KILLS = 10
+-- Shown % = Wowhead's % (worth PRIOR_KILLS kills) blended with what Juju
+-- players actually saw. Every kill moves it a little; the more kills, the
+-- more it is the players' own number. No threshold, no sudden jumps.
+J.PRIOR_KILLS = 50
+-- an item only Juju knows (no Wowhead %): damped a little at first, so one
+-- drop in one kill doesn't read 100 %
+J.NO_PRIOR_KILLS = 5
 
 local C_Item = C_Item
 local getItemInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
@@ -350,7 +355,8 @@ function J.ItemSources(itemID)
     for _, e in ipairs(out) do
         local kills, items, players = J.Stats(e.npc)
         local n = items[itemID]
-        if n and kills > 0 then e.own, e.ownN, e.kills, e.players = n * 100 / kills, n, kills, players end
+        e.kills, e.players = kills, players
+        if n and kills > 0 then e.own, e.ownN = n * 100 / kills, n end
     end
     table.sort(out, function(a, b)
         local pa, pb = (J.ShownPct(a)) or -1, (J.ShownPct(b)) or -1
@@ -428,11 +434,17 @@ function J.IsSkinning(itemID)
     return J.SKINNING[itemID] or (J.db and J.db.skinItems and J.db.skinItems[itemID]) or false
 end
 
--- The single % shown for a drop: Juju's own number once the mob has enough
--- kills and the item has dropped there, otherwise Wowhead's.
+-- The single % shown for a drop (and how it was made: "wowhead", "blandet", "juju")
 function J.ShownPct(e)
-    if e.own and (e.kills or 0) >= J.MIN_KILLS then return e.own, "juju" end
-    return e.pct, e.pct and "wowhead" or nil
+    local kills, drops = e.kills or 0, e.ownN or 0
+    if e.pct then
+        if kills <= 0 then return e.pct, "wowhead" end
+        return (J.PRIOR_KILLS * e.pct / 100 + drops) / (J.PRIOR_KILLS + kills) * 100, "blandet"
+    end
+    if drops > 0 and kills > 0 then
+        return drops / (kills + J.NO_PRIOR_KILLS) * 100, "juju"
+    end
+    return nil
 end
 
 function J.Pct(p)

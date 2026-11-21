@@ -44,7 +44,9 @@ local function getRow(i)
         GameTooltip:AddLine(" ")
         if J.IsSkinning(self.e.item) then GameTooltip:AddLine("Fås ved Skinning", 0.78, 0.63, 0.38) end
         local _, src = J.ShownPct(self.e)
-        GameTooltip:AddDoubleLine("Vist:", src == "juju" and "Juju-%" or "Wowhead-%", 1, 0.82, 0, 1, 1, 1)
+        local how = src == "blandet" and ("Wowhead + %d Juju-kills"):format(self.e.kills or 0)
+            or (src == "juju" and "Juju-kills" or "Wowhead")
+        GameTooltip:AddDoubleLine("Vist % bygger på:", how, 1, 0.82, 0, 1, 1, 1)
         GameTooltip:AddDoubleLine("Wowhead:", J.Pct(self.e.pct), 1, 0.82, 0, 1, 1, 1)
         if self.e.kills and self.e.kills > 0 then
             GameTooltip:AddDoubleLine("Juju-data:", ("%s (%d av %d kills)"):format(J.Pct(self.e.own or 0),
@@ -139,13 +141,11 @@ function T:Refresh()
     end
     shownGuid, goneFor = guid, 0
     local all, kills, players = J.MobDrops(npcID)
-    -- no "?" lines: a drop is listed when its chance is known – Wowhead %, or
-    -- your own % once you have killed enough of this mob for it to mean something
-    local enough = kills >= J.MIN_KILLS
+    -- no "?" lines: a drop is listed once there is a % for it (Wowhead's,
+    -- blended with Juju kills, or from Juju kills alone)
     local list, hidden = {}, 0
     for _, e in ipairs(all) do
-        if not enough then e.own = nil end                 -- 1 kill = "100 %": too early
-        if e.pct or e.own then list[#list + 1] = e else hidden = hidden + 1 end
+        if J.ShownPct(e) then list[#list + 1] = e else hidden = hidden + 1 end
     end
     if #list == 0 then frame:Hide(); return end     -- nothing known: stay out of the way
     -- (shownGuid stays set: this mob has nothing to show, don't recompute every poll)
@@ -167,20 +167,17 @@ function T:Refresh()
         r.icon:SetTexture(J.ItemIcon(e.item))
         r.name:SetText(J.ItemName(e.item) .. (J.IsSkinning(e.item) and " |cffc8a060(Skinning)|r" or ""))
         r.name:SetTextColor(J.QualityColor(J.ItemQuality(e.item)))
-        -- one number, always in the same yellow: Juju's when it has enough kills
+        -- one number, always the same yellow; it moves with every Juju kill
         r.pct:SetText(J.Pct((J.ShownPct(e))))
         r:Show()
     end
     for i = shown + 1, #rows do rows[i]:Hide(); rows[i].e = nil end
     local parts = {}
     if #list > shown then parts[#parts + 1] = ("+%d til"):format(#list - shown) end
-    if hidden > 0 then
-        parts[#parts + 1] = enough and ("%d uten %%"):format(hidden)
-            or ("%d skjult til %d/%d kills"):format(hidden, kills, J.MIN_KILLS)
-    end
-    if kills > 0 and enough then
-        parts[#parts + 1] = ("Juju-%% fra %d kills%s"):format(kills,
-            (players or 0) > 1 and (", " .. players .. " spillere") or "")
+    if hidden > 0 then parts[#parts + 1] = ("%d uten %%"):format(hidden) end
+    if kills > 0 then
+        parts[#parts + 1] = ("justert med %d kills%s"):format(kills,
+            (players or 0) > 1 and (" fra " .. players .. " spillere") or "")
     end
     frame.foot:SetText(#parts > 0 and table.concat(parts, " · ") or "% fra Wowhead")
     frame:SetHeight(TOP + FOOT + shown * ROW_H + 4)

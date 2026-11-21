@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+# written by tools/ingest.py for the issue reply, not data
+data/ingest-result.md
+# local inbox for files received in Discord before they are ingested
+data/inbox/

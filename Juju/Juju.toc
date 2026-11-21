@@ -1,0 +1,16 @@
+## Interface: 16001
+## Title: |cff7fd4ffJuju|r
+## Notes: Viser hva mobben du har som target dropper (med %), og lar deg søke på et item for å finne beste mob å farme.
+## Author: Juju
+## X-License: GPL-3.0
+## X-Credits: Drop data from QuestieDB (GPL-3.0), Wowhead rates via QuestieDB
+## Version: 1.1.0
+## SavedVariables: JujuDB
+## IconTexture: Interface\Icons\INV_Misc_Bag_10
+
+DropData.lua
+SharedData.lua
+Core.lua
+Learn.lua
+Target.lua
+Search.lua

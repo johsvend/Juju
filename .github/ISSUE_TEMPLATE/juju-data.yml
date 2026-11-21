@@ -1,0 +1,24 @@
+name: Send inn Juju-data
+description: Del kill- og drop-tellingene dine, så drop-% blir bedre for alle.
+title: "Juju-data"
+labels: ["juju-data"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Takk for at du hjelper!** Bare mob-ID, antall kills og item-tellinger deles – ingen navn, ingen posisjon.
+
+        **Enklest:** skriv `/juju eksport` i spillet (eller klikk «Del mine data» i Juju-søket), trykk **Ctrl+C** og lim inn under.
+
+        **Eller:** dra filen `WTF/Account/<konto>/SavedVariables/Juju.lua` inn i feltet under.
+        GitHub godtar ikke `.lua`-vedlegg direkte – gi den nytt navn til `Juju.txt` eller pakk den i en `.zip` først.
+
+        Etter innsending sjekker og legger en robot inn dataene automatisk og svarer her.
+  - type: textarea
+    id: data
+    attributes:
+      label: Juju-data
+      description: Lim inn teksten som starter med `JUJU1;` – eller dra inn Juju.txt / Juju.zip.
+      placeholder: "JUJU1;..."
+    validations:
+      required: true

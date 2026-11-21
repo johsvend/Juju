@@ -1,0 +1,85 @@
+# Takes Juju data sent in through the "Send inn Juju-data" issue form,
+# checks it, merges everything into Juju/SharedData.lua and answers the issue.
+#
+# Safety: the issue text is untrusted. It is only passed to Python through an
+# environment variable (never pasted into a shell command), and submissions
+# are parsed, never executed. Only normalized numbers are committed.
+name: Juju-data
+
+on:
+  issues:
+    types: [opened, edited]
+  push:
+    branches: [main]
+    paths: ["data/submissions/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: juju-data            # one merge at a time, no lost commits
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    if: github.event_name != 'issues' || contains(github.event.issue.labels.*.name, 'juju-data')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Ta imot innsending fra issue
+        id: ingest
+        if: github.event_name == 'issues'
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+        run: |
+          set +e
+          python tools/ingest.py --issue
+          echo "ok=$([ $? -eq 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Slå sammen alle innsendinger
+        run: python tools/merge_submissions.py
+
+      - name: Lagre endringer
+        run: |
+          git config user.name "juju-data-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/submissions Juju/SharedData.lua data/summary.md
+          if [ -f data/authors.json ]; then git add data/authors.json; fi
+          if git diff --cached --quiet; then
+            echo "Ingen endringer."
+          else
+            git commit -m "Juju-data: oppdater fellesdata"
+            git push
+          fi
+
+      - name: Svar i issuet
+        if: github.event_name == 'issues'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number }}
+          OK: ${{ steps.ingest.outputs.ok }}
+        run: |
+          {
+            cat data/ingest-result.md
+            echo
+            if [ "$OK" = "true" ]; then
+              echo "Dataene er lagt inn i fellesdataene og kommer med i neste versjon av Juju. Takk! 🎉"
+            else
+              echo "Klarte ikke å lese dataene. Sjekk at du limte inn hele teksten fra \`/juju eksport\` (den starter med \`JUJU1;\`), eller legg ved Juju.txt / Juju.zip, og rediger issuet."
+            fi
+          } > comment.md
+          gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body-file comment.md
+          if [ "$OK" = "true" ]; then
+            gh issue close "$NUMBER" --repo "$GITHUB_REPOSITORY"
+          fi

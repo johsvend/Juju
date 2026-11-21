@@ -1,0 +1,39 @@
+# Tests the data tools and builds an installable Juju.zip on every change.
+# The zip is attached to the workflow run (Actions -> run -> Artifacts).
+name: Bygg
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test dataverktøyene
+        run: python -m unittest discover -s tests -v
+
+      - name: Sjekk Lua-syntaks
+        run: |
+          sudo apt-get install -y -qq lua5.1 > /dev/null
+          for f in Juju/*.lua; do luac5.1 -p "$f" || exit 1; done
+          echo "Alle Lua-filer OK"
+
+      - name: Lag Juju.zip
+        run: zip -r -q Juju.zip Juju LICENSE README.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Juju
+          path: Juju.zip

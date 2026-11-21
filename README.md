@@ -23,7 +23,7 @@ Drop-% blir bedre jo flere som bruker Juju. Hver spiller teller hva mobs dropper
 1. Last ned `Juju.zip`: GitHub → *Actions* → siste «Bygg»-kjøring → *Artifacts*.
 2. Pakk ut slik at du får `World of Warcraft/_forever_/Interface/AddOns/Juju/Juju.toc`.
 3. Start spillet og sjekk at Juju er huket av i AddOns-listen.
-4. Valgfritt, men anbefalt: åpne Juju-søket og klikk **«Bli med i Juju-kanalen»**. Da deler du med alle Juju-spillere på realmen, ikke bare guild og gruppe. Kanalen vises ikke i chatten.
+4. Valgfritt, men anbefalt: skriv `/juju kanal` én gang. Da deler du med alle Juju-spillere på realmen, ikke bare guild og gruppe. Kanalen vises ikke i chatten.
 
 ## Kommandoer
 

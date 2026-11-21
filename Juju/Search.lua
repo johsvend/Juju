@@ -153,11 +153,6 @@ function S:Update()
     end
     for i = n + 1, #rows do rows[i]:Hide(); rows[i].item, rows[i].npc, rows[i].e = nil, nil, nil end
     child:SetHeight(math.max(10, n * ROW))
-    if S.chan and J.Sync then
-        S.chan:SetText(J.Sync:InChannel() and "Forlat Juju-kanalen" or "Bli med i Juju-kanalen")
-        local peers = J.Sync:Status()
-        S.syncText:SetText(J.db.autoShare and ("Deling: på · data fra %d spillere"):format(peers) or "Deling: av (/juju deling)")
-    end
 end
 
 local function create()
@@ -247,35 +242,12 @@ local function create()
 
     scroll = CreateFrame("ScrollFrame", "JujuSearchScroll", frame, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", 14, -100)
-    scroll:SetPoint("BOTTOMRIGHT", -32, 62)
+    scroll:SetPoint("BOTTOMRIGHT", -32, 16)
     child = CreateFrame("Frame", nil, scroll)
     child:SetSize(W - 56, 10)
     scroll:SetScrollChild(child)
 
-    -- bottom: legend, then a status bar for sharing with the channel button
-    line(56, true)
-    local foot = text(frame, "GameFontDisableSmall")
-    foot:SetPoint("BOTTOMLEFT", 18, 40)
-    foot:SetText("% = Wowhead · |cff80ff80grønn|r = Juju (dine + delte) · ? = ukjent")
-
-    -- in-game sharing: status + Juju channel (joining needs a click)
-    S.chan = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    S.chan:SetSize(170, 22)
-    S.chan:SetPoint("BOTTOMRIGHT", -16, 12)
-    S.chan:SetScript("OnClick", function()
-        if J.Sync:InChannel() then J.Sync:LeaveChannel() else J.Sync:JoinChannel() end
-        C_Timer.After(2.5, function() S:Update() end)
-    end)
-    S.chan:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Juju-kanalen")
-        GameTooltip:AddLine("Deler drop-tellinger usynlig med alle Juju-spillere på realmen, ikke bare guild og gruppe. Kanalen vises ikke i chatten.", 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-    S.chan:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    S.syncText = text(frame, "GameFontHighlightSmall")
-    S.syncText:SetPoint("LEFT", frame, "BOTTOMLEFT", 18, 23)
-    S.syncText:SetPoint("RIGHT", S.chan, "LEFT", -8, 0)
+    -- (no legend/status bar: the channel is /juju kanal, status /juju sync)
 
     -- shift-click an item into the box
     if type(ChatEdit_InsertLink) == "function" then

@@ -55,11 +55,13 @@ function Get-ForeverRoots {
     foreach ($r in ($roots | Select-Object -Unique)) {
         foreach ($cand in @((Join-Path $r '_forever_'), $r)) {
             if ((Test-Path (Join-Path $cand 'WTF')) -and (Test-Path (Join-Path $cand 'Interface\AddOns'))) {
-                $found += (Resolve-Path $cand).Path
+                $found += (Resolve-Path $cand).Path.TrimEnd('\')
             }
         }
     }
-    $found | Select-Object -Unique
+    # the same folder can come from the registry and the default list with
+    # different letter case: Sort-Object -Unique ignores case, Select-Object doesn't
+    $found | Sort-Object -Unique
 }
 
 # ---------------------------------------------------------------- state

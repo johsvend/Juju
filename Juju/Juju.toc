@@ -4,12 +4,14 @@
 ## Author: Juju
 ## X-License: GPL-3.0
 ## X-Credits: Drop data from QuestieDB (GPL-3.0), Wowhead rates via QuestieDB
-## Version: 1.3.3
+## Version: 1.4.0
 ## SavedVariables: JujuDB
 ## IconTexture: Interface\Icons\INV_Misc_Bag_10
 
 DropData.lua
 SharedData.lua
+PubKey.lua
+Pack.lua
 Core.lua
 Learn.lua
 Sync.lua

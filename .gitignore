@@ -4,3 +4,7 @@ __pycache__/
 data/ingest-result.md
 # local inbox for files received in Discord before they are ingested
 data/inbox/
+
+# wrangler (Cloudflare) cache: holds account id and e-mail, never commit
+.wrangler/
+node_modules/

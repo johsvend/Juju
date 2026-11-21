@@ -1,5 +1,10 @@
 # Endringslogg
 
+## 1.4.0
+- **Ingen dobbelttelling i gruppe og raid:** Juju-spillerne i gruppa avtaler usynlig hvem som teller et lik (den med alfabetisk første navn blant dem som så det), og den som teller får med alle items alle så. Alene telles det som før.
+- **Fellesdata deles i spillet:** GitHub signerer fellesdataene (RSA-2048 og SHA-256). Har noen nyere fellesdata, får du dem automatisk uten å laste ned Juju på nytt. Pakker med feil signatur kastes. Ingen karakternavn ligger i repoet.
+- **Meldinger bruker `;` som skilletegn** i stedet for `|`, som er spillets spesialtegn.
+
 ## 1.3.3
 - **Kanal-knappen viser ON/OFF** (grønn/rød) ved tittelen «Juju Monster Drop Search».
 - **Juju-kanalen er ON fra start:** Juju blir med 10 sekunder etter innlogging. Velger du OFF, blir det stående OFF. Hvis spillet ikke tillater automatisk innmelding, prøver Juju aldri igjen av seg selv, og et klikk på OFF slår den på.

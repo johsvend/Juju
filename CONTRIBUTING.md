@@ -37,6 +37,20 @@ Jo mer du er pålogget i guild, gruppe og Juju-kanalen, jo mer samler din Juju i
 2. Dobbeltklikk `uploader/installer.cmd`. Det lager en planlagt oppgave som kjører hvert 5. minutt.
 3. Loggen ligger i `%LOCALAPPDATA%\JujuUploader\log.txt`. Fjern opplasteren med `uploader/avinstaller.cmd`.
 
+## Signeringsnøkkelen (viktig)
+
+Fellesdataene signeres, slik at Juju trygt kan dele dem fra spiller til spiller.
+
+- **Den private nøkkelen** ligger i `%USERPROFILE%\.juju\juju-signing-key.json` og som GitHub-hemmeligheten `JUJU_SIGNING_KEY`. **Den skal aldri inn i repoet.** Ta en sikkerhetskopi av filen, for eksempel på en minnepinne eller i en passordbehandler.
+- **Den offentlige nøkkelen** ligger i `Juju/PubKey.lua`. Den kan bare *sjekke* signaturer, ikke lage dem.
+- **Roboten signerer** i «Juju-data»-jobben. Mangler hemmeligheten, blir fellesdataene usignert, og da deler ikke Juju dem videre i spillet. Fellesdataene i selve addonen virker fortsatt.
+- **Hvis nøkkelen er mistet eller lekket:**
+  1. Lag en ny med `python tools/jujusign.py keygen <fil>`.
+  2. Sett ny `J.PUBKEY_N` i `Juju/PubKey.lua` (`python tools/jujusign.py pubkey <fil>`).
+  3. Oppdater hemmeligheten: `Get-Content <fil> -Raw | gh secret set JUJU_SIGNING_KEY`.
+  4. Gi ut en ny versjon av Juju. Gamle versjoner godtar da ikke nye pakker før spillerne oppdaterer.
+- **Signer lokalt:** sett miljøvariabelen `JUJU_SIGNING_KEY` til innholdet i nøkkelfilen før du kjører `tools/merge_submissions.py`.
+
 ## Legge inn data mottatt i Discord
 
 ```

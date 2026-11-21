@@ -47,7 +47,11 @@ jobs:
           python tools/ingest.py --issue
           echo "ok=$([ $? -eq 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
-      - name: Slå sammen alle innsendinger
+      - name: Slå sammen og signer fellesdataene
+        env:
+          # the private signing key (Settings -> Secrets): Juju only accepts
+          # community packs in-game that carry this signature
+          JUJU_SIGNING_KEY: ${{ secrets.JUJU_SIGNING_KEY }}
         run: python tools/merge_submissions.py
 
       - name: Lagre endringer

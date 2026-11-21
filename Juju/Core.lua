@@ -513,6 +513,7 @@ boot:SetScript("OnEvent", function(_, event, arg1, arg2)
         JujuDB = type(JujuDB) == "table" and JujuDB or {}
         defaults(JujuDB)
         J.db = JujuDB
+        if J.Pack then pcall(J.Pack.Apply) end       -- a newer signed pack received earlier
     elseif event == "PLAYER_LOGIN" then
         if not J.db then return end
         for _, mod in ipairs({ J.Learn, J.Sync, J.Target, J.Search }) do

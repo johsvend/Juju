@@ -144,5 +144,28 @@ class MergeTests(unittest.TestCase):
             ingest.from_issue()
 
 
+class SignTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import jujusign
+        cls.sign = jujusign
+        cls.key = jujusign.keygen()
+
+    def test_roundtrip_and_tamper(self):
+        text = b"JUJUPACK1\nversion=5\n38=10|1|2589:3\n#abcd=1\n"
+        sig = self.sign.sign(text, self.key)
+        self.assertTrue(self.sign.verify(text, sig, self.key["n"]))
+        self.assertFalse(self.sign.verify(text.replace(b"10|1", b"99|1"), sig, self.key["n"]))
+        other = self.sign.keygen()
+        self.assertFalse(self.sign.verify(text, sig, other["n"]))
+
+    def test_canonical_matches_file_lines(self):
+        subs = {"abcd": {"serial": 7, "mobs": {38: {"kills": 10, "items": {2589: 3}}}}}
+        kills, items, players = merge_submissions.merge(subs)
+        body = merge_submissions.pack_body(subs, kills, items, players)
+        self.assertEqual(body, "38=10|1|2589:3\n#abcd=7")
+        self.assertEqual(merge_submissions.canonical(5, body), "JUJUPACK1\nversion=5\n38=10|1|2589:3\n#abcd=7\n")
+
+
 if __name__ == "__main__":
     unittest.main()

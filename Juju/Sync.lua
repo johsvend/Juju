@@ -4,9 +4,17 @@
 -- No program needed: addon messages (invisible) to guild, group/raid and the
 -- Juju channel (joined with a click in the Juju search window).
 --
---   H|id:serial,id:serial,...   "this is what I have"   (broadcast, every ~5 min)
---   R|id                        "send me that one"      (whisper to whoever has it)
---   D|id|serial|i|n|chunk       a piece of one record   (whisper back)
+--   H;id:serial,id:serial,...   "this is what I have"            (broadcast, every ~5 min)
+--   R;id                        "send me that one"               (whisper to whoever has it)
+--   D;id;serial;i;n;chunk       a piece of one record            (whisper back)
+--   V;version                   "my community pack is version"   (broadcast)
+--   P;version                   "send me that pack"              (whisper)
+--   Q;version;i;n;chunk         a piece of the signed pack       (whisper back)
+--   C;corpseGUID;item,item      "I saw this corpse" (group only, see Learn.lua)
+--
+-- ";" separates fields: "|" is the game's escape character in chat text.
+-- The community pack (Pack.lua) is signed by GitHub, so anyone may pass it on:
+-- a pack that doesn't match the signature is thrown away.
 --
 -- Records are your own counts and what you received from others (so data
 -- spreads further than who happens to be online together). Everything
@@ -134,10 +142,14 @@ function S:Hello()
     for id, p in pairs(J.db.peers) do peers[#peers + 1] = { id = id, serial = p.serial, t = p.t or 0 } end
     table.sort(peers, function(a, b) return a.t > b.t end)
     for i = 1, math.min(#peers, 40) do entries[#entries + 1] = peers[i].id .. ":" .. peers[i].serial end
+    local packVersion, packSig = J.Pack.Current()
+    if packSig and packVersion > 0 then
+        for _, t in ipairs(targets) do push(t[1], t[2], "V;" .. packVersion) end
+    end
     if #entries == 0 then return end
     -- up to 9 entries per message (fits the 255-byte limit)
     for i = 1, #entries, 9 do
-        local text = "H|" .. table.concat(entries, ",", i, math.min(i + 8, #entries))
+        local text = "H;" .. table.concat(entries, ",", i, math.min(i + 8, #entries))
         for _, t in ipairs(targets) do push(t[1], t[2], text) end
     end
 end
@@ -184,7 +196,7 @@ local function onHello(sender, list)
             if newer and (not asked[id] or GetTime() - asked[id] > 60) then
                 if have or mayAddNew(sender) then
                     asked[id] = GetTime()
-                    push("WHISPER", sender, "R|" .. id)
+                    push("WHISPER", sender, "R;" .. id)
                     requests = requests + 1
                 end
             end
@@ -201,7 +213,7 @@ local function onRequest(sender, id)
     if n > MAX_CHUNKS or #queue + n > MAX_QUEUE then return end
     served[key] = GetTime()
     for i = 1, n do
-        push("WHISPER", sender, ("D|%s|%d|%d|%d|%s"):format(id, serial, i, n, body:sub((i - 1) * CHUNK + 1, i * CHUNK)))
+        push("WHISPER", sender, ("D;%s;%d;%d;%d;%s"):format(id, serial, i, n, body:sub((i - 1) * CHUNK + 1, i * CHUNK)))
     end
 end
 
@@ -224,19 +236,113 @@ local function onData(sender, id, serial, i, n, chunk)
     end
 end
 
+----------------------------------------------------------------------
+-- The signed community pack: whoever has a newer one hands it over
+----------------------------------------------------------------------
+local PACK_MAX_CHUNKS = 2500           -- ~500 KB
+local PACK_WAIT = 1800                 -- a transfer may take a while at 2 msgs/s
+local packAsk, packIn, packOut         -- { version, sender, t } / inbox / { target, chunks, i }
+
+-- "\n" and "|" can't travel in chat text: "~" and "^" stand in for them
+local function packEncode(wire) return (wire:gsub("\n", "~"):gsub("|", "^")) end
+local function packDecode(text) return (text:gsub("~", "\n"):gsub("%^", "|")) end
+
+local function onPackVersion(sender, version)
+    local have = J.Pack.Current()
+    if version <= have or packIn then return end
+    if packAsk and GetTime() - packAsk.t < 300 then return end   -- one ask per 5 min
+    packAsk = { version = version, sender = sender, t = GetTime() }
+    push("WHISPER", sender, "P;" .. version)
+end
+
+local function onPackRequest(sender, version)
+    if packOut then return end                        -- one hand-over at a time
+    local have, wire = J.Pack.Outgoing()
+    if not have or have ~= version then return end
+    wire = packEncode(wire)
+    local n = math.ceil(#wire / CHUNK)
+    if n > PACK_MAX_CHUNKS then return end
+    packOut = { target = sender, version = version, wire = wire, n = n, i = 1, t = GetTime() }
+end
+
+-- feed the hand-over into the queue a little at a time (shares it with other traffic)
+local function packTick()
+    if not packOut then return end
+    if GetTime() - packOut.t > PACK_WAIT then packOut = nil; return end
+    while packOut.i <= packOut.n and #queue < 40 do
+        local i = packOut.i
+        push("WHISPER", packOut.target, ("Q;%d;%d;%d;%s"):format(packOut.version, i, packOut.n,
+            packOut.wire:sub((i - 1) * CHUNK + 1, i * CHUNK)))
+        packOut.i = i + 1
+    end
+    if packOut.i > packOut.n then packOut = nil end
+end
+
+local function onPackData(sender, version, i, n, chunk)
+    -- only the pack we asked this very player for
+    if not (packAsk and packAsk.sender == sender and packAsk.version == version) then return end
+    if n < 1 or n > PACK_MAX_CHUNKS or i < 1 or i > n then return end
+    if not packIn then packIn = { version = version, n = n, got = 0, parts = {}, t = GetTime() } end
+    if packIn.n ~= n or packIn.parts[i] then return end
+    packIn.parts[i], packIn.got = chunk, packIn.got + 1
+    if packIn.got < n then return end
+    local wire = packDecode(table.concat(packIn.parts))
+    packIn, packAsk = nil, nil
+    local ok, why = J.Pack.Accept(wire)
+    if ok then
+        stats.pack = version
+        J.Print(("nye fellesdata mottatt (versjon %d, signatur OK)."):format(version))
+        if J.Target and J.Target.Refresh then J.Target:Refresh() end
+    else
+        stats.packRejected = (stats.packRejected or 0) + 1
+        stats.packWhy = why
+    end
+end
+
+-- group-only claims of corpses (no double counting in groups, see Learn.lua)
+function S:Claim(guid, items)
+    if not enabled() then return end
+    local kind = (IsInRaid and IsInRaid()) and "RAID" or ((IsInGroup and IsInGroup()) and "PARTY") or nil
+    if not kind or refused[kind] then return false end
+    local list = {}
+    for id in pairs(items or {}) do list[#list + 1] = id end
+    table.sort(list)
+    local head = "C;" .. guid .. ";"
+    local per = math.max(1, math.floor((240 - #head) / 7))
+    if #list == 0 then push(kind, nil, head); return true end
+    for i = 1, #list, per do push(kind, nil, head .. table.concat(list, ",", i, math.min(i + per - 1, #list))) end
+    return true
+end
+
 function S:OnMessage(prefix, text, kind, sender)
     if prefix ~= PREFIX or not enabled() then return end
     if J.Secret(text) or J.Secret(sender) or type(text) ~= "string" or isMe(sender) then return end
-    local cmd, rest = text:match("^([HRD])|(.*)$")
+    local cmd, rest = text:match("^([HRDVPQC]);(.*)$")
     if cmd == "H" then
         onHello(sender, rest)
     elseif cmd == "R" and kind == "WHISPER" then
         local id = rest:match("^([0-9a-f]+)$")
         if id and #id >= 4 and #id <= 32 then onRequest(sender, id) end
     elseif cmd == "D" and kind == "WHISPER" then
-        local id, serial, i, n, chunk = rest:match("^([0-9a-f]+)|(%d+)|(%d+)|(%d+)|([0-9:=,/]*)$")
+        local id, serial, i, n, chunk = rest:match("^([0-9a-f]+);(%d+);(%d+);(%d+);([0-9:=,/]*)$")
         if id and #id >= 4 and #id <= 32 and #serial <= 12 then
             onData(sender, id, tonumber(serial), tonumber(i), tonumber(n), chunk)
+        end
+    elseif cmd == "V" then
+        local v = rest:match("^(%d+)$")
+        if v and #v <= 12 then onPackVersion(sender, tonumber(v)) end
+    elseif cmd == "P" and kind == "WHISPER" then
+        local v = rest:match("^(%d+)$")
+        if v and #v <= 12 then onPackRequest(sender, tonumber(v)) end
+    elseif cmd == "Q" and kind == "WHISPER" then
+        local v, i, n, chunk = rest:match("^(%d+);(%d+);(%d+);([%w%^:,=#!~]*)$")
+        if v and #v <= 12 then onPackData(sender, tonumber(v), tonumber(i), tonumber(n), chunk) end
+    elseif cmd == "C" and (kind == "PARTY" or kind == "RAID") and J.Learn and J.Learn.OnClaim then
+        local guid, list = rest:match("^(Creature%-[%w%-]+);([0-9,]*)$")
+        if guid and #guid <= 80 then
+            local items = {}
+            for id in list:gmatch("%d+") do if #id <= 8 then items[tonumber(id)] = true end end
+            J.Learn:OnClaim(shortName(sender), guid, items)
         end
     end
 end
@@ -279,6 +385,7 @@ function S:Status()
     for _, t in ipairs(broadcastTargets()) do open[#open + 1] = t[1] == "CHANNEL" and "Juju-kanal" or t[1]:lower() end
     local closed = {}
     for k, why in pairs(refused) do closed[#closed + 1] = k:lower() .. " " .. tostring(why) end
+    stats.packVersion = (J.Pack.Current())
     return n, open, closed, stats
 end
 
@@ -304,6 +411,7 @@ function S:Init()
     f:SetScript("OnUpdate", function(_, dt)
         sinceSend, sinceHello = sinceSend + dt, sinceHello + dt
         if InCombatLockdown() then return end
+        packTick()
         if sinceSend >= SEND_GAP and #queue > 0 then sinceSend = 0; sendOne() end
         if sinceHello >= nextHello then
             sinceHello, nextHello = 0, HELLO_EVERY + math.random(0, 60)
@@ -312,6 +420,7 @@ function S:Init()
         for key, box in pairs(inbox) do                      -- give up on half records
             if GetTime() - box.t > 120 then inbox[key] = nil end
         end
+        if packIn and GetTime() - packIn.t > PACK_WAIT then packIn, packAsk = nil, nil end
     end)
     -- the game rejoins a permanent channel at login: keep it out of the chat windows
     -- Default ON: join by ourselves a little after login, unless the player

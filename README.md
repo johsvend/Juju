@@ -49,7 +49,8 @@ gruppe┘   (og videre fra spiller til spiller)
 
 1. **Du dreper og looter.** Juju teller hver kill og hva den droppet.
 2. **Juju deler med Juju-spillere** i guild, gruppe og Juju-kanalen. Det skjer med usynlige addon-meldinger, sakte og aldri i kamp. Dataene sprer seg videre fra spiller til spiller, så de når også dem du aldri treffer.
-3. **Vedlikeholderen samler alt** og legger det inn i fellesdataene på GitHub. Det kommer med i neste versjon av Juju, så også nye spillere får tallene fra dag én.
+3. **Vedlikeholderen samler alt** og legger det inn i fellesdataene på GitHub.
+4. **De nyeste fellesdataene deles også i spillet.** GitHub signerer fellesdataene digitalt. Har en Juju-spiller nyere fellesdata enn deg, får du dem automatisk, og du trenger ikke laste ned Juju på nytt. Juju sjekker signaturen og kaster alt som er endret eller forfalsket.
 
 Delingen bruker bare det spillet selv tillater. Sier spillet nei til en vei, for eksempel guild-meldinger på en realm, slutter Juju å prøve den veien for resten av økten.
 
@@ -61,6 +62,9 @@ Delingen bruker bare det spillet selv tillater. Sier spillet nei til en vei, for
 Bare tre ting deles: **mob-ID, antall kills og hvor mange ganger hvert item droppet**. Ingen posisjon og ingen kontoinformasjon. Juju lager en tilfeldig, anonym ID per installasjon, slik at nyeste data erstatter eldre og ingenting telles dobbelt. I spillet ser mottakeren navnet på karakteren som sendte meldingen, slik det alltid er med addon-meldinger, men navnet lagres ikke i fellesdataene.
 
 ### Hvordan tallene holdes ærlige
+
+- **I gruppe og raid telles hvert lik én gang.** Juju-spillerne i gruppa avtaler usynlig hvem som teller det, og den som teller får med alle items som noen så.
+- **Fellesdataene er signert av GitHub.** Ingen kan forfalske dem, selv om de deles fra spiller til spiller.
 
 - **Alt sjekkes etter de samme reglene overalt:** inne i spillet, hos mottakeren og på GitHub. Urimelige tall forkastes, for eksempel flere drops enn kills, og hver spiller kan påvirke hver mob med maks 5000 kills.
 - **Juju tar bare imot data den selv har bedt om.** Én spiller kan føre inn maks 30 nye spillere per dag, og maks 1000 lagres.

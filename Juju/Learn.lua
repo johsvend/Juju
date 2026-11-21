@@ -66,6 +66,107 @@ local function countKill(guid, npcID)
     end
 end
 
+-- count items seen on a corpse (each item once per corpse)
+local function countItems(guid, npcID, items, links)
+    local seen = looted[guid]
+    if not seen then seen = {}; looted[guid] = seen end
+    for itemID in pairs(items) do
+        if not seen[itemID] then
+            seen[itemID] = true
+            local m = mob(npcID)
+            m.items[itemID] = (m.items[itemID] or 0) + 1
+            J.db.ownDirty = true
+            local link = links and links[itemID]
+            if link and not J.ITEMS[itemID] then
+                local name = link:match("%[(.-)%]")
+                if name then J.db.itemNames[itemID] = name end
+            end
+        end
+    end
+end
+
+----------------------------------------------------------------------
+-- Groups: one corpse, one count
+--
+-- Alone, a corpse is counted right away. In a group every member who sees
+-- the corpse (it died as their target, or they opened it) tells the group
+-- "I saw it" with the items they saw. When the fight is over everyone picks
+-- the same winner: the alphabetically first name of those who saw it. Only
+-- the winner counts the kill, with ALL items anyone saw (who looted first
+-- saw the most). If the group can't be told (the game refuses), counting
+-- falls back to the old way.
+----------------------------------------------------------------------
+local pending = {}     -- [guid] = { npc, items = {}, links = {}, last = GetTime() }
+local claims = {}      -- [guid] = { names = {}, items = {}, t }
+local winner = {}      -- [guid] = name, decided
+local winnerT = {}     -- [guid] = when decided (to forget later)
+local lastCombatEnd = 0
+local SETTLE, AFTER_COMBAT, FORGET = 6, 5, 600
+
+local function myName() return (UnitName("player") or ""):lower() end
+local function inGroup() return (IsInGroup and IsInGroup()) or (IsInRaid and IsInRaid()) end
+
+local function commit(guid, npcID, items, links)
+    countKill(guid, npcID)
+    countItems(guid, npcID, items, links)
+end
+
+-- one observation of a corpse: died as your target ({}), or opened (its items)
+function L:Observe(guid, npcID, items, links)
+    if not inGroup() then commit(guid, npcID, items, links); return end
+    if winner[guid] then
+        if winner[guid] == myName() then countItems(guid, npcID, items, links)   -- late loot, I'm the counter
+        elseif J.Sync then J.Sync:Claim(guid, items) end                          -- tell the counter
+        return
+    end
+    local p = pending[guid]
+    if not p then p = { npc = npcID, items = {}, links = {} }; pending[guid] = p end
+    for id in pairs(items) do p.items[id] = true end
+    for id, l in pairs(links or {}) do p.links[id] = l end
+    p.last = GetTime()
+    if not (J.Sync and J.Sync:Claim(guid, items)) then
+        pending[guid] = nil                          -- can't reach the group: count as before
+        commit(guid, npcID, items, links)
+    end
+end
+
+function L:OnClaim(sender, guid, items)
+    if not sender then return end
+    local c = claims[guid]
+    if not c then c = { names = {}, items = {}, t = GetTime() }; claims[guid] = c end
+    c.names[sender:lower()] = true
+    for id in pairs(items) do c.items[id] = true end
+    -- I already counted this corpse: add what the others saw
+    if winner[guid] == myName() then
+        local npcID = J.NpcID(guid)
+        if npcID then countItems(guid, npcID, items) end
+    end
+end
+
+local function settle()
+    local now = GetTime()
+    if InCombatLockdown() or now - lastCombatEnd < AFTER_COMBAT then return end
+    for guid, p in pairs(pending) do
+        if now - p.last >= SETTLE then
+            local me = myName()
+            local first = me
+            local c = claims[guid]
+            if c then for name in pairs(c.names) do if name < first then first = name end end end
+            winner[guid], winnerT[guid] = first, now
+            if first == me then
+                local all = {}
+                for id in pairs(p.items) do all[id] = true end
+                if c then for id in pairs(c.items) do all[id] = true end end
+                commit(guid, p.npc, all, p.links)
+            end
+            pending[guid] = nil
+        end
+    end
+    for guid, c in pairs(claims) do if now - c.t > FORGET then claims[guid] = nil end end
+    for guid, t in pairs(winnerT) do if now - t > FORGET then winner[guid], winnerT[guid] = nil, nil end end
+end
+L.Settle = settle
+
 ----------------------------------------------------------------------
 -- Loot
 ----------------------------------------------------------------------
@@ -91,30 +192,20 @@ function L:LOOT_OPENED()
     lootReadAt = GetTime()
     if GetTime() - lastGather < 3 then return end                   -- skinning etc., not a drop
     if IsFishingLoot and IsFishingLoot() then return end
+    local corpses = {}   -- [guid] = { npc, items = {}, links = {} }
     for slot = 1, (GetNumLootItems() or 0) do
         local link = GetLootSlotLink(slot)
         local itemID = link and not J.Secret(link) and tonumber(link:match("item:(%d+)"))
         for _, guid in ipairs(slotSources(slot)) do
             local npcID = J.NpcID(guid)
             if npcID then
-                countKill(guid, npcID)
-                if itemID then
-                    local seen = looted[guid]
-                    if not seen then seen = {}; looted[guid] = seen end
-                    if not seen[itemID] then
-                        seen[itemID] = true
-                        local m = mob(npcID)
-                        m.items[itemID] = (m.items[itemID] or 0) + 1
-                        J.db.ownDirty = true
-                        if not J.ITEMS[itemID] then
-                            local name = link:match("%[(.-)%]")
-                            if name then J.db.itemNames[itemID] = name end
-                        end
-                    end
-                end
+                local c = corpses[guid]
+                if not c then c = { npc = npcID, items = {}, links = {} }; corpses[guid] = c end
+                if itemID then c.items[itemID] = true; c.links[itemID] = link end
             end
         end
     end
+    for guid, c in pairs(corpses) do L:Observe(guid, c.npc, c.items, c.links) end
 end
 L.LOOT_READY = L.LOOT_OPENED
 
@@ -141,8 +232,10 @@ local function checkTargetDead()
     end
     if UnitIsPlayer("target") then return end
     local npcID = J.NpcID(guid)
-    if npcID then countKill(guid, npcID) end
+    if npcID then L:Observe(guid, npcID, {}) end
 end
+
+function L:PLAYER_REGEN_ENABLED() lastCombatEnd = GetTime() end
 
 function L:UNIT_HEALTH(unit)
     if unit == "target" then checkTargetDead() end
@@ -155,6 +248,15 @@ function L:Init()
     f:RegisterEvent("LOOT_CLOSED")
     f:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
     f:RegisterUnitEvent("UNIT_HEALTH", "target")   -- target died -> a kill (no combat log)
+    f:RegisterEvent("PLAYER_REGEN_ENABLED")            -- fight over: group corpses can be settled
+    local acc = 0
+    f:SetScript("OnUpdate", function(_, dt)
+        acc = acc + dt
+        if acc < 1 then return end
+        acc = 0
+        local ok, err = pcall(settle)
+        if not ok and not L.err then L.err = true; J.Print("feil ved læring: " .. tostring(err)) end
+    end)
     f:SetScript("OnEvent", function(_, event, ...)
         local h = L[event]
         if h then

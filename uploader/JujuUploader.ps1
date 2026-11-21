@@ -125,6 +125,8 @@ function Send-Uploads($root) {
 $okLine = @(
     '^--[^\r\n]*$',
     '^local _, J = \.\.\.$',
+    '^J\.SHARED_VERSION = \d{1,12}$',
+    '^J\.SHARED_SIG = \{ s = "[0-9a-f]{1,1024}", q = "[0-9a-f]{1,2048}" \}$',
     '^J\.SHARED = \{$',
     '^J\.SHARED_CONTRIB = \{$',
     '^\}$',

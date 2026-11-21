@@ -3,15 +3,15 @@
 -- SHARED[npcID] = "kills|players|item:n,item:n"
 -- SHARED_CONTRIB[playerId] = export serial included (so your own kills
 -- aren't counted twice in-game). Do not hand-edit.
--- 1 players, 4 mobs, 5 kills.
+-- 1 players, 4 mobs, 6 kills.
 ----------------------------------------------------------------------
 local _, J = ...
 J.SHARED = {
 [441]="1|1|",
-[547]="1|1|769:1",
+[547]="2|1|723:1,769:2,2677:1,3172:1",
 [4064]="2|1|1746:1,2592:1,6564:1",
 [4065]="1|1|",
 }
 J.SHARED_CONTRIB = {
-["36a05ce8404c"]=1795225448,
+["36a05ce8404c"]=1795225642,
 }

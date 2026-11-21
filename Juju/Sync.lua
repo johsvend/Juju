@@ -76,13 +76,13 @@ local function sendOne()
     if not m or refused[m.kind] then return end
     if not (C_ChatInfo and C_ChatInfo.SendAddonMessage) then return end
     local ok, res = pcall(C_ChatInfo.SendAddonMessage, PREFIX, m.text, m.kind, m.target)
-    if not ok then refused[m.kind] = "feil"; return end
+    if not ok then refused[m.kind] = "error"; return end
     if J.Secret(res) then return end
     stats.sent = stats.sent + 1
     -- a whisper to someone who just logged off is no reason to stop whispering
     if m.kind ~= "WHISPER" and (res == 4 or (res == 7 and m.kind ~= "CHANNEL")
         or (res == 7 and m.kind == "CHANNEL" and channelId())) then
-        refused[m.kind] = "avvist (" .. tostring(res) .. ")"
+        refused[m.kind] = "refused (" .. tostring(res) .. ")"
         for i = #queue, 1, -1 do if queue[i].kind == m.kind then table.remove(queue, i) end end
     end
 end
@@ -291,7 +291,7 @@ local function onPackData(sender, version, i, n, chunk)
     local ok, why = J.Pack.Accept(wire)
     if ok then
         stats.pack = version
-        J.Print(("nye fellesdata mottatt (versjon %d, signatur OK)."):format(version))
+        J.Print(("new community data received (version %d, signature OK)."):format(version))
         if J.Target and J.Target.Refresh then J.Target:Refresh() end
     else
         stats.packRejected = (stats.packRejected or 0) + 1
@@ -382,7 +382,7 @@ function S:Status()
     local n = 0
     for _ in pairs(J.db.peers) do n = n + 1 end
     local open = {}
-    for _, t in ipairs(broadcastTargets()) do open[#open + 1] = t[1] == "CHANNEL" and "Juju-kanal" or t[1]:lower() end
+    for _, t in ipairs(broadcastTargets()) do open[#open + 1] = t[1] == "CHANNEL" and "Juju channel" or t[1]:lower() end
     local closed = {}
     for k, why in pairs(refused) do closed[#closed + 1] = k:lower() .. " " .. tostring(why) end
     stats.packVersion = (J.Pack.Current())
@@ -403,7 +403,7 @@ function S:Init()
     f:SetScript("OnEvent", function(_, event, ...)
         if event == "CHAT_MSG_ADDON" then
             local ok, err = pcall(S.OnMessage, S, ...)
-            if not ok and not S.err then S.err = true; J.Print("feil i deling: " .. tostring(err)) end
+            if not ok and not S.err then S.err = true; J.Print("error in sharing: " .. tostring(err)) end
         else
             nextHello = math.min(nextHello, sinceHello + 10)     -- new group/guild: say hello soon
         end

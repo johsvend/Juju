@@ -43,27 +43,27 @@ local function getRow(i)
         else GameTooltip:SetHyperlink("item:" .. self.e.item) end
         GameTooltip:AddLine(" ")
         if self.e.skin then
-            GameTooltip:AddLine("Fås ved Skinning", 0.78, 0.63, 0.38)
+            GameTooltip:AddLine("Gathered by Skinning", 0.78, 0.63, 0.38)
             if (self.e.skins or 0) > 0 then
-                GameTooltip:AddDoubleLine("Skinning:", ("%d av %d skinn"):format(self.e.skinN or 0, self.e.skins),
+                GameTooltip:AddDoubleLine("Skinning:", ("%d of %d skins"):format(self.e.skinN or 0, self.e.skins),
                     1, 0.82, 0, 1, 1, 1)
             else
-                GameTooltip:AddLine("Ingen skinning-data ennå – tallet kommer når Juju-spillere skinner denne.", 0.7, 0.7, 0.7, true)
+                GameTooltip:AddLine("No skinning data yet – the number appears when Juju players skin this mob.", 0.7, 0.7, 0.7, true)
             end
-            GameTooltip:AddDoubleLine("I vanlig loot (Wowhead):", J.Pct(self.e.pct), 1, 0.82, 0, 1, 1, 1)
+            GameTooltip:AddDoubleLine("In normal loot (Wowhead):", J.Pct(self.e.pct), 1, 0.82, 0, 1, 1, 1)
             GameTooltip:Show()
             return
         end
         local _, src = J.ShownPct(self.e)
-        local how = src == "blandet" and ("Wowhead + %d Juju-kills"):format(self.e.kills or 0)
+        local how = src == "blend" and ("Wowhead + %d Juju-kills"):format(self.e.kills or 0)
             or (src == "juju" and "Juju-kills" or "Wowhead")
-        GameTooltip:AddDoubleLine("Vist % bygger på:", how, 1, 0.82, 0, 1, 1, 1)
+        GameTooltip:AddDoubleLine("Shown % is based on:", how, 1, 0.82, 0, 1, 1, 1)
         GameTooltip:AddDoubleLine("Wowhead:", J.Pct(self.e.pct), 1, 0.82, 0, 1, 1, 1)
         if self.e.kills and self.e.kills > 0 then
-            GameTooltip:AddDoubleLine("Juju-data:", ("%s (%d av %d kills)"):format(J.Pct(self.e.own or 0),
+            GameTooltip:AddDoubleLine("Juju-data:", ("%s (%d of %d kills)"):format(J.Pct(self.e.own or 0),
                 self.e.ownN or 0, self.e.kills), 1, 0.82, 0, 1, 1, 1)
             if (self.e.players or 0) > 1 then
-                GameTooltip:AddDoubleLine(" ", ("fra %d spillere"):format(self.e.players), 1, 1, 1, 0.7, 0.7, 0.7)
+                GameTooltip:AddDoubleLine(" ", ("from %d players"):format(self.e.players), 1, 1, 1, 0.7, 0.7, 0.7)
             end
         end
         GameTooltip:Show()
@@ -180,19 +180,19 @@ function T:Refresh()
         r.name:SetTextColor(J.QualityColor(J.ItemQuality(e.item)))
         -- one number, always the same yellow; it moves with every Juju kill
         local shownPct = J.ShownPct(e)
-        r.pct:SetText(shownPct and J.Pct(shownPct) or "|cffc8a060skinnes|r")   -- skinning, no data yet
+        r.pct:SetText(shownPct and J.Pct(shownPct) or "|cffc8a060skinnable|r")   -- skinning, no data yet
         r:Show()
     end
     for i = shown + 1, #rows do rows[i]:Hide(); rows[i].e = nil end
     local parts = {}
-    if #list > shown then parts[#parts + 1] = ("+%d til"):format(#list - shown) end
-    if hidden > 0 then parts[#parts + 1] = ("%d uten %%"):format(hidden) end
+    if #list > shown then parts[#parts + 1] = ("+%d more"):format(#list - shown) end
+    if hidden > 0 then parts[#parts + 1] = ("%d without %%"):format(hidden) end
     if kills > 0 then
-        parts[#parts + 1] = ("justert med %d kills%s"):format(kills,
-            (players or 0) > 1 and (" fra " .. players .. " spillere") or "")
+        parts[#parts + 1] = ("adjusted by %d kills%s"):format(kills,
+            (players or 0) > 1 and (" from " .. players .. " players") or "")
     end
-    if (skins or 0) > 0 then parts[#parts + 1] = ("skinnet %d ganger"):format(skins) end
-    frame.foot:SetText(#parts > 0 and table.concat(parts, " · ") or "% fra Wowhead")
+    if (skins or 0) > 0 then parts[#parts + 1] = ("skinned %d times"):format(skins) end
+    frame.foot:SetText(#parts > 0 and table.concat(parts, " · ") or "% from Wowhead")
     frame:SetHeight(TOP + FOOT + shown * ROW_H + 4)
     frame:Show()
 end
@@ -206,7 +206,7 @@ function T:Init()
     f:RegisterEvent("PLAYER_REGEN_ENABLED")      -- fight over: show again if still hovering
     local function refresh()
         local ok, err = pcall(T.Refresh, T)
-        if not ok and not T.err then T.err = true; J.Print("feil i drop-liste: " .. tostring(err)) end
+        if not ok and not T.err then T.err = true; J.Print("error in drop list: " .. tostring(err)) end
     end
     f:SetScript("OnEvent", function(_, event)
         if event == "PLAYER_REGEN_DISABLED" or event == "PLAYER_ENTER_COMBAT" then

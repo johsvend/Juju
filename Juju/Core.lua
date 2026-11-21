@@ -164,7 +164,7 @@ local function startIndexBuild()
             return
         end
         local ok, err = coroutine.resume(building)
-        if not ok then ticker:Cancel(); building = nil; J.Print("feil ved lasting av drop-data: " .. tostring(err)) end
+        if not ok then ticker:Cancel(); building = nil; J.Print("error loading drop data: " .. tostring(err)) end
     end)
 end
 
@@ -455,7 +455,7 @@ function J.IsSkinning(itemID)
     return J.SKINNING[itemID] or (J.db and J.db.skinItems and J.db.skinItems[itemID]) or false
 end
 
--- The single % shown for a drop (and how it was made: "wowhead", "blandet", "juju")
+-- The single % shown for a drop (and how it was made: "wowhead", "blend", "juju")
 function J.ShownPct(e)
     if e.skin then                                   -- skinning: how often skinning gives it
         local skins, n = e.skins or 0, e.skinN or 0
@@ -465,7 +465,7 @@ function J.ShownPct(e)
     local kills, drops = e.kills or 0, e.ownN or 0
     if e.pct then
         if kills <= 0 then return e.pct, "wowhead" end
-        return (J.PRIOR_KILLS * e.pct / 100 + drops) / (J.PRIOR_KILLS + kills) * 100, "blandet"
+        return (J.PRIOR_KILLS * e.pct / 100 + drops) / (J.PRIOR_KILLS + kills) * 100, "blend"
     end
     if drops > 0 and kills > 0 then
         return drops / (kills + J.NO_PRIOR_KILLS) * 100, "juju"
@@ -553,11 +553,11 @@ boot:SetScript("OnEvent", function(_, event, arg1, arg2)
         if arg1 == ADDON and J.Sync and J.Sync.autoJoining and J.db then
             -- joining the channel by ourselves isn't allowed here: never again automatically
             J.db.sync.autoJoinBlocked = true
-            J.Print("spillet tillater ikke at Juju blir med i Juju-kanalen automatisk. Klikk OFF i Juju-søket for å slå den på.")
+            J.Print("the game doesn't let Juju join the Juju channel by itself. Click OFF in the Juju search window to turn it on.")
             return
         end
         if arg1 == ADDON then
-            J.Print(("|cffff4040diagnose:|r %s – funksjon: |cffffff00%s|r (i kamp: %s, target: %s, loot åpen: %s)"):format(
+            J.Print(("|cffff4040diagnosis:|r %s – function: |cffffff00%s|r (in combat: %s, target: %s, loot open: %s)"):format(
                 event, tostring(arg2), tostring(InCombatLockdown() and true or false),
                 tostring(UnitExists("target") and true or false),
                 tostring(LootFrame and LootFrame:IsShown() and true or false)))
@@ -579,7 +579,7 @@ boot:SetScript("OnEvent", function(_, event, arg1, arg2)
         for _, mod in ipairs({ J.Learn, J.Sync, J.Target, J.Search }) do
             if mod and mod.Init then
                 local ok, err = pcall(mod.Init, mod)
-                if not ok then J.Print("feil ved oppstart: " .. tostring(err)) end
+                if not ok then J.Print("error at startup: " .. tostring(err)) end
             end
         end
         startIndexBuild()
@@ -597,32 +597,32 @@ SLASH_JUJU1 = "/juju"
 SlashCmdList.JUJU = function(msg)
     if not J.db then return end
     msg = (msg or ""):lower():match("^%s*(.-)%s*$")
-    if msg == "target" or msg == "liste" then
+    if msg == "target" or msg == "list" or msg == "liste" then
         J.db.target.enabled = not J.db.target.enabled
-        J.Print("drop-liste når musa er over en mob: " .. (J.db.target.enabled and "på" or "av"))
+        J.Print("drop list when the mouse is over a mob: " .. (J.db.target.enabled and "on" or "off"))
         J.Target:Refresh()
-    elseif msg == "flytt" or msg == "reset" then
+    elseif msg == "move" or msg == "reset" or msg == "flytt" then
         J.db.target.pos = nil
-        J.Print("drop-listen er satt tilbake under target-rammen (gjelder etter /reload).")
-    elseif msg == "deling" then
+        J.Print("the drop list is back under the target frame (after /reload).")
+    elseif msg == "share" or msg == "deling" then
         J.db.autoShare = not J.db.autoShare
         if not J.db.autoShare then J.db.upload, J.db.uploads = nil, nil end
-        J.Print("deling med andre Juju-spillere: " .. (J.db.autoShare and "på" or "av"))
-    elseif msg == "kanal" then
-        if J.Sync:InChannel() then J.Sync:LeaveChannel(); J.Print("forlot Juju-kanalen.")
-        else J.Sync:JoinChannel(); J.Print("ble med i Juju-kanalen (skjult i chatten).") end
+        J.Print("sharing with other Juju players: " .. (J.db.autoShare and "on" or "off"))
+    elseif msg == "channel" or msg == "kanal" then
+        if J.Sync:InChannel() then J.Sync:LeaveChannel(); J.Print("left the Juju channel.")
+        else J.Sync:JoinChannel(); J.Print("joined the Juju channel (hidden in chat).") end
     elseif msg == "sync" or msg == "status" then
         local n, open, closed, st = J.Sync:Status()
-        J.Print(("deling: %s · %d spillere mottatt · sender til: %s"):format(J.db.autoShare and "på" or "av", n,
-            #open > 0 and table.concat(open, ", ") or "ingen (ikke i guild/gruppe/Juju-kanal)"))
-        print(("  meldinger sendt %d · poster mottatt %d · nye spillere %d"):format(st.sent, st.got, st.new))
-        if #closed > 0 then print("  stengt denne økten: " .. table.concat(closed, ", ")) end
+        J.Print(("sharing: %s · %d players received · sending to: %s"):format(J.db.autoShare and "on" or "off", n,
+            #open > 0 and table.concat(open, ", ") or "nobody (not in a guild/group/Juju channel)"))
+        print(("  messages sent %d · records received %d · new players %d"):format(st.sent, st.got, st.new))
+        if #closed > 0 then print("  closed this session: " .. table.concat(closed, ", ")) end
     elseif msg == "eksport" or msg == "export" then
         J.Search:ShowExport()
-    elseif msg == "knapp" then
+    elseif msg == "button" or msg == "knapp" then
         J.db.button.hide = not J.db.button.hide
         J.Search:UpdateButton()
-    elseif msg == "" or msg == "søk" or msg == "sok" then
+    elseif msg == "" or msg == "search" or msg == "søk" or msg == "sok" then
         J.Search:Toggle()
     else
         J.Search:Toggle(msg)              -- /juju linen  -> search for it

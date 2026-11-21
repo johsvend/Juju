@@ -1,5 +1,10 @@
 # Endringslogg
 
+## 1.5.0
+- **Juju is now in English:** all windows, tooltips, the drop list and chat messages.
+- New English slash commands: `/juju channel`, `share`, `export`, `move`, `button`, `list`, `search`. The old Norwegian ones (`kanal`, `deling`, `eksport`, `flytt`, `knapp`) still work.
+- Your data and settings are kept.
+
 ## 1.4.5
 - **Oppdaterte fellesdata:** de nyeste drop-tallene fra Juju-spillere er bygget inn, signert som før.
 - Rettet en feil som stoppet oppdateringen av fellesdataene på GitHub.

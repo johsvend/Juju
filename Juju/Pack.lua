@@ -255,8 +255,8 @@ function P.Accept(wire)
     local text = wire:sub(1, cut)
     local version, shared, contrib = P.Parse(text)
     if not version then return false, "ugyldig format" end
-    if version <= (P.Current()) then return false, "ikke nyere" end
-    if not P.Verify(text, { s = s, q = q }) then return false, "feil signatur" end
+    if version <= (P.Current()) then return false, "not newer" end
+    if not P.Verify(text, { s = s, q = q }) then return false, "bad signature" end
     J.db.pack = { version = version, text = text, sig = { s = s, q = q }, t = time() }
     P.Apply()
     return true

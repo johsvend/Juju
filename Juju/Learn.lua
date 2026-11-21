@@ -348,13 +348,13 @@ function L:Init()
         if acc < 1 then return end
         acc = 0
         local ok, err = pcall(settle)
-        if not ok and not L.err then L.err = true; J.Print("feil ved læring: " .. tostring(err)) end
+        if not ok and not L.err then L.err = true; J.Print("error while learning: " .. tostring(err)) end
     end)
     f:SetScript("OnEvent", function(_, event, ...)
         local h = L[event]
         if h then
             local ok, err = pcall(h, L, ...)
-            if not ok and not L.err then L.err = true; J.Print("feil ved læring: " .. tostring(err)) end
+            if not ok and not L.err then L.err = true; J.Print("error while learning: " .. tostring(err)) end
         end
     end)
 end

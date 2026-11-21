@@ -13,31 +13,33 @@ Drop-% blir bedre jo flere som bruker Juju. Hver spiller teller hva mobs dropper
 - **Drop-liste når musa er over en mob:** hold musa over en mob, så vises det den dropper, med høyest % øverst. Listen forsvinner når musa flyttes vekk, og skjules når du angriper. Den blir stående mens musa er over selve listen, så du kan dra den dit du vil.
 - **To kilder for %:**
   - Ett tall som starter på Wowhead-% (via QuestieDB) og glir mot det Juju-spillerne faktisk ser, litt for hver kill. Jo flere kills, jo mer er det spillernes eget tall.
-  - items fra skinning er merket «(Skinning)» og viser **skinning-%**, altså hvor ofte du får dem når du skinner mobben. Juju-spillernes skinning telles for seg og deles som drops. Står det «skinnes», finnes det ingen skinning-data ennå.
+  - items fra skinning er merket «(Skinning)» og viser **skinning-%**, altså hvor ofte du får dem når du skinner mobben. Juju-spillernes skinning telles for seg og deles som drops. Står det «skinnable», finnes det ingen skinning-data ennå.
   - items som bare Juju kjenner, vises fra første drop (dempet de første kills)
 - **Søk:** `/juju linen`, eller klikk på Juju-knappen ved minimap. Du får opp alle mobs som dropper itemet, med level, sone og %.
 - **Automatisk deling:** hver kill og hva den droppet deles med Juju-spillere i guilden din, gruppen din og Juju-kanalen.
 
 ## Installasjon
 
-1. Last ned `Juju.zip`: GitHub → *Actions* → siste «Bygg»-kjøring → *Artifacts*.
+1. Installer Juju fra CurseForge, eller last ned `Juju.zip`: GitHub → *Actions* → siste «Bygg»-kjøring → *Artifacts*.
 2. Pakk ut slik at du får `World of Warcraft/_forever_/Interface/AddOns/Juju/Juju.toc`.
 3. Start spillet og sjekk at Juju er huket av i AddOns-listen.
-4. Juju-kanalen står på **ON** fra start. Da deler du med alle Juju-spillere på realmen, ikke bare guild og gruppe. Kanalen vises ikke i chatten. Knappen **ON/OFF** ved tittelen i Juju-søket, eller `/juju kanal`, slår den av og på.
+4. Juju-kanalen står på **ON** fra start. Da deler du med alle Juju-spillere på realmen, ikke bare guild og gruppe. Kanalen vises ikke i chatten. Knappen **ON/OFF** ved tittelen i Juju-søket, eller `/juju channel`, slår den av og på.
 
 ## Kommandoer
+
+All tekst i Juju er på engelsk (fra 1.5.0). De gamle norske kommandoene i parentes virker fortsatt.
 
 | Kommando | Gjør |
 |---|---|
 | `/juju` | Åpne søket |
 | `/juju <navn>` | Søk direkte, for eksempel `/juju runecloth` |
-| `/juju kanal` | Slå Juju-kanalen av og på (ON fra start) |
+| `/juju channel` (`kanal`) | Slå Juju-kanalen av og på (ON fra start) |
 | `/juju sync` | Vis status for delingen: hvor mange spillere og hvor det sendes |
-| `/juju deling` | Skru delingen av og på |
-| `/juju eksport` | Vis dataene dine som tekst, for manuell innsending |
-| `/juju target` | Skru drop-listen (mus over mob) av og på |
-| `/juju flytt` | Sett drop-listen tilbake til standardplassen |
-| `/juju knapp` | Skjul eller vis minimap-knappen |
+| `/juju share` (`deling`) | Skru delingen av og på |
+| `/juju export` (`eksport`) | Vis dataene dine som tekst, for manuell innsending |
+| `/juju target` (`list`) | Skru drop-listen (mus over mob) av og på |
+| `/juju move` (`flytt`) | Sett drop-listen tilbake til standardplassen |
+| `/juju button` (`knapp`) | Skjul eller vis minimap-knappen |
 
 ## Slik blir drop-% bedre for alle
 
@@ -55,7 +57,7 @@ gruppe┘   (og videre fra spiller til spiller)
 Delingen bruker bare det spillet selv tillater. Sier spillet nei til en vei, for eksempel guild-meldinger på en realm, slutter Juju å prøve den veien for resten av økten.
 
 **Manuell innsending** (for eksempel hvis du sjelden er pålogget samtidig med andre):
-`/juju eksport` → **Ctrl+C** → GitHub *Issues → New issue → «Send inn Juju-data»* → lim inn. Eller lim inn i Juju-kanalen på Discord.
+`/juju export` → **Ctrl+C** → GitHub *Issues → New issue → «Send inn Juju-data»* → lim inn. Eller lim inn i Juju-kanalen på Discord.
 
 ### Personvern
 

@@ -57,7 +57,7 @@ local function getRow(i)
         if self.item then
             if GameTooltip.SetItemByID then GameTooltip:SetItemByID(self.item)
             else GameTooltip:SetHyperlink("item:" .. self.item) end
-            GameTooltip:AddLine("Klikk: vis mobs som dropper dette", 0.5, 1, 0.5)
+            GameTooltip:AddLine("Click: show mobs that drop this", 0.5, 1, 0.5)
         else
             local e = self.e
             local name, lo, hi, rank, map = J.Mob(self.npc)
@@ -68,10 +68,10 @@ local function getRow(i)
             if z ~= "" then GameTooltip:AddLine(z, 0.8, 0.8, 0.8) end
             GameTooltip:AddDoubleLine("Wowhead:", J.Pct(e.pct), 1, 0.82, 0, 1, 1, 1)
             if e.kills then
-                GameTooltip:AddDoubleLine("Juju-data:", ("%s (%d av %d kills)"):format(J.Pct(e.own), e.ownN, e.kills),
+                GameTooltip:AddDoubleLine("Juju-data:", ("%s (%d of %d kills)"):format(J.Pct(e.own), e.ownN, e.kills),
                     1, 0.82, 0, 1, 1, 1)
                 if (e.players or 0) > 1 then
-                    GameTooltip:AddDoubleLine(" ", ("fra %d spillere"):format(e.players), 1, 1, 1, 0.7, 0.7, 0.7)
+                    GameTooltip:AddDoubleLine(" ", ("from %d players"):format(e.players), 1, 1, 1, 0.7, 0.7, 0.7)
                 end
             end
         end
@@ -112,10 +112,10 @@ function S:Update()
         back:Hide()
         local found = findItems(query)
         if #query < 2 then
-            header:SetText("Skriv minst 2 bokstaver av et item-navn (f.eks. «linen», «runecloth»).")
+            header:SetText("Type at least 2 letters of an item name (e.g. \"linen\", \"runecloth\").")
         else
-            header:SetText(("%d item(s) funnet%s – klikk for beste mobs."):format(#found,
-                #found > MAX_ITEMS and (", viser " .. MAX_ITEMS) or ""))
+            header:SetText(("%d item(s) found%s – click for the best mobs."):format(#found,
+                #found > MAX_ITEMS and (", showing " .. MAX_ITEMS) or ""))
         end
         for i = 1, math.min(#found, MAX_ITEMS) do
             local it = found[i]
@@ -132,7 +132,7 @@ function S:Update()
     else
         back:Show()
         local list = J.ItemSources(selItem)
-        header:SetText(("Beste mobs for |cffffffff%s|r (%d) – høyest drop-sjanse først:"):format(J.ItemName(selItem), #list))
+        header:SetText(("Best mobs for |cffffffff%s|r (%d) – highest drop chance first:"):format(J.ItemName(selItem), #list))
         for _, e in ipairs(list) do
             n = n + 1
             local r = getRow(n)
@@ -203,7 +203,7 @@ local function create()
     back = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
     back:SetSize(90, 22)
     back:SetPoint("TOPRIGHT", -18, -48)
-    back:SetText("« Tilbake")
+    back:SetText("« Back")
     back:SetScript("OnClick", function() mode = "items"; S:Update() end)
 
     box = CreateFrame("EditBox", "JujuSearchBox", frame, "InputBoxTemplate")
@@ -219,7 +219,7 @@ local function create()
     glass:SetVertexColor(0.7, 0.7, 0.7)
     local hint = box:CreateFontString(nil, "OVERLAY", "GameFontDisable")
     hint:SetPoint("LEFT", 20, 0)
-    hint:SetText("Søk etter item … (eller shift-klikk et item)")
+    hint:SetText("Search for an item … (or shift-click one)")
     local function updateHint()
         hint:SetShown((box:GetText() or "") == "" and not box:HasFocus())
     end
@@ -259,8 +259,8 @@ local function create()
     end)
     S.chan:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Juju-kanalen: " .. (J.Sync:InChannel() and "|cff40ff40ON|r" or "|cffff4040OFF|r"))
-        GameTooltip:AddLine("Deler drop-tellinger usynlig med alle Juju-spillere på realmen, ikke bare guild og gruppe. Kanalen vises ikke i chatten. Klikk for å slå av/på.", 1, 1, 1, true)
+        GameTooltip:AddLine("Juju channel: " .. (J.Sync:InChannel() and "|cff40ff40ON|r" or "|cffff4040OFF|r"))
+        GameTooltip:AddLine("Shares drop counts invisibly with all Juju players on the realm, not just your guild and group. The channel is hidden in chat. Click to turn it on/off.", 1, 1, 1, true)
         GameTooltip:Show()
     end)
     S.chan:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -319,7 +319,7 @@ function S:ShowExport()
         tinsert(UISpecialFrames, "JujuExport")
         local title = text(f, "GameFontNormalLarge", "CENTER")
         title:SetPoint("TOP", 0, -14)
-        title:SetText("Del Juju-dataene dine")
+        title:SetText("Share your Juju data")
         local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
         close:SetPoint("TOPRIGHT", -4, -4)
         f.info = text(f, "GameFontHighlightSmall")
@@ -345,9 +345,9 @@ function S:ShowExport()
     end
     local txt, n = J.Export()
     exportFrame.text = txt
-    exportFrame.info:SetText(("%d mobs med data. Trykk |cffffff00Ctrl+C|r for å kopiere, og lim teksten inn i "
-        .. "|cffffff00«Send inn Juju-data»|r på GitHub eller i Discord-kanalen. Bare mob-ID, kills og "
-        .. "item-tellinger deles – ingen navn."):format(n))
+    exportFrame.info:SetText(("%d mobs with data. Press |cffffff00Ctrl+C|r to copy, and paste the text into "
+        .. "|cffffff00\"Submit Juju data\"|r on GitHub or in the Discord channel. Only mob IDs, kills and "
+        .. "item counts are shared – no names."):format(n))
     exportFrame:Show()
     exportFrame.edit:SetText(txt)
     exportFrame.edit:SetFocus()
@@ -392,7 +392,7 @@ function S:Init()
     mmButton:SetScript("OnClick", function(_, btn)
         if btn == "RightButton" then
             J.db.target.enabled = not J.db.target.enabled
-            J.Print("drop-liste når musa er over en mob: " .. (J.db.target.enabled and "på" or "av"))
+            J.Print("drop list when the mouse is over a mob: " .. (J.db.target.enabled and "on" or "off"))
             J.Target:Refresh()
         else
             S:Toggle()
@@ -411,9 +411,9 @@ function S:Init()
     mmButton:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
         GameTooltip:AddLine("Juju")
-        GameTooltip:AddLine("Venstreklikk: søk etter item → beste mobs", 1, 1, 1)
-        GameTooltip:AddLine("Høyreklikk: drop-liste (mus over mob) på/av", 1, 1, 1)
-        GameTooltip:AddLine("Dra: flytt knappen", 0.7, 0.7, 0.7)
+        GameTooltip:AddLine("Left-click: search an item → best mobs", 1, 1, 1)
+        GameTooltip:AddLine("Right-click: drop list (mouse over mob) on/off", 1, 1, 1)
+        GameTooltip:AddLine("Drag: move the button", 0.7, 0.7, 0.7)
         GameTooltip:Show()
     end)
     mmButton:SetScript("OnLeave", function() GameTooltip:Hide() end)

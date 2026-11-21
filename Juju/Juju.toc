@@ -1,10 +1,10 @@
 ## Interface: 16001
 ## Title: |cff7fd4ffJuju|r
-## Notes: Viser hva mobben under musa dropper (med %), og lar deg søke på et item for å finne beste mob å farme.
+## Notes: Shows what the mob under your mouse drops (with %), and lets you search an item to find the best mob to farm.
 ## Author: Juju
 ## X-License: GPL-3.0
 ## X-Credits: Drop data from QuestieDB (GPL-3.0), Wowhead rates via QuestieDB
-## Version: 1.4.5
+## Version: 1.5.0
 ## SavedVariables: JujuDB
 ## IconTexture: Interface\Icons\INV_Misc_Bag_10
 

@@ -2,7 +2,7 @@
 
 - Spillere: **5**
 - Mobs med data: **296**
-- Kills totalt: **2449**
+- Kills totalt: **2450**
 
 ## Mest data
 

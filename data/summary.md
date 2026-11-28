@@ -1,8 +1,8 @@
 # Juju – fellesdata
 
 - Spillere: **5**
-- Mobs med data: **435**
-- Kills totalt: **4026**
+- Mobs med data: **442**
+- Kills totalt: **4057**
 
 ## Mest data
 
